@@ -1,0 +1,14 @@
+{
+    "name": "Undefined.Outline.Editor.Tests",
+    "references": [
+        "Undefined.Outline.Editor",
+        "Undefined.Outline"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
