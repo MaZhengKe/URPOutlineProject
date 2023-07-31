@@ -1,0 +1,21 @@
+{
+    "name": "KuanMi.Outline.Editor",
+    "rootNamespace": "",
+    "references": [
+        "KuanMi.Outline",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.RenderPipelines.Core.Editor",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

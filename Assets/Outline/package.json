@@ -1,0 +1,18 @@
+{
+  "name": "top.kuanmi.outline",
+  "author": "KuanMi",
+  "displayName": "Outline",
+  "version": "1.0.1",
+  "unity": "2022.1",
+  "description": "Outline for URP",
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "13.1.8"
+  },
+  "samples": [
+    {
+      "displayName": "Outline for URP",
+      "description": "Simple Outline for URP",
+      "path": "Samples~/Example"
+    }
+  ]
+}
