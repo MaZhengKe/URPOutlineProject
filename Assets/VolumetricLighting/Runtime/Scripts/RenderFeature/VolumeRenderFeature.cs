@@ -15,7 +15,7 @@ namespace KuanMi.VolumetricLighting
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
         
         public Mesh defaultMesh;
-        public Texture blueNoise;
+        public Texture2DArray blueNoise;
 
         private SpotVolumeRenderPass m_SpotVolumeRenderPass;
         private DirectionalVolumeRenderPass m_DirectionalVolumeRenderPass;
@@ -30,7 +30,7 @@ namespace KuanMi.VolumetricLighting
         public override void Create()
         {
             defaultMesh = Resources.Load<Mesh>("KuanMi/Meshes/Sphere");
-            blueNoise = Resources.Load<Texture>("KuanMi/LDR_LLL1_0 1");
+            blueNoise = Resources.Load<Texture2DArray>("KuanMi/output");
 
             // if(defaultMesh == null)
             //     Debug.LogError("defaultMesh is null");

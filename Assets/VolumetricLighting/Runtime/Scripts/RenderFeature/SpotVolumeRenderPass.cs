@@ -11,7 +11,7 @@ namespace KuanMi.VolumetricLighting
         
         private readonly ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(VolumeRenderFeature.ProfileId.SpotVolume);
         public Mesh defaultMesh { get; set; }
-        public Texture blueNoise { get; set; }
+        public Texture2DArray blueNoise { get; set; }
 
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)

@@ -10,7 +10,7 @@ Shader "KuanMi/SpotVolumetricLighting"
         _SpotAngle("SpotAngle",Range(0,180)) = 1.0
         _lightIndex("lightIndex",int) = 0
 
-        _BlueNoise("BlueNoise",2D) = "white"
+        _BlueNoise("BlueNoise",2DArray) = "white"
     }
 
     SubShader
@@ -77,10 +77,9 @@ Shader "KuanMi/SpotVolumetricLighting"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float2 noiseUVBias : TEXCOORD0;
             };
 
-            TEXTURE2D(_BlueNoise);
+            TEXTURE2D_ARRAY(_BlueNoise);
             SAMPLER(sampler_BlueNoise);
 
             CBUFFER_START(UnityPerMaterial)
@@ -96,22 +95,20 @@ Shader "KuanMi/SpotVolumetricLighting"
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
-
-                output.noiseUVBias =  64 * float2(sin(_Time.w*10), cos(_Time.w*10));
                 return output;
             }
 
+            float random(float value)
+            {
+                return  frac(sin(value) * 43758.5453);
+            }
+            
             float noise(float2 uv)
             {
-                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise, uv).r;
-                // return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
+                Hash(_Time)
+                int index = random(_Time) * 64;
+                return SAMPLE_TEXTURE2D_ARRAY(_BlueNoise, sampler_BlueNoise, uv, index).r;
             }
-
-            float3 noise3(float2 uv)
-            {
-                return float3(noise(uv), noise(uv + float2(1, 0)), noise(uv + float2(0, 1)));
-            }
-
 
             Light GetAdditionalPerObjectLightForVol(int perObjectLightIndex, float3 positionWS)
             {
@@ -242,7 +239,7 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 worldPos = dot(farPoint - worldPos, ray) < 0 ? farPoint : worldPos;
 
-                float2 noiseUV = (IN.positionCS.xy +  IN.noiseUVBias) * 0.015625;
+                float2 noiseUV = IN.positionCS.xy * 0.015625;
 
                 float noisev = noise(noiseUV);
 

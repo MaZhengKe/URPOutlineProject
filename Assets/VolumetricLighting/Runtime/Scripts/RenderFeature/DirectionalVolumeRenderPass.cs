@@ -16,7 +16,7 @@ namespace KuanMi.VolumetricLighting
         
         private VolumetricLighting m_VolumetricLighting;
         private Material m_Material;
-        public Texture blueNoise { get; set; }
+        public Texture2DArray blueNoise { get; set; }
         
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
