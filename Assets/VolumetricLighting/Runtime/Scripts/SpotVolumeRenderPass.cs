@@ -1,4 +1,5 @@
-﻿using UnityEngine.Rendering;
+﻿using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Other.VolumetricLighting.Scripts
@@ -15,14 +16,14 @@ namespace Other.VolumetricLighting.Scripts
 
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
-                var spotHelpers = SpotVolumeLight.spotHelpers;
+                var spotHelpers = BaseVolumeLight.BaseVolumeLightList;
 
                 foreach (var spotHelper in spotHelpers)
                 {
                     var mesh = spotHelper.mesh;
                     var transform = spotHelper.transform;
                     
-                    var spotLight = spotHelper.spotLight;
+                    var spotLight = spotHelper.Light;
                     var visibleLights = renderingData.lightData.visibleLights;
 
                     var lightIndex = -1;

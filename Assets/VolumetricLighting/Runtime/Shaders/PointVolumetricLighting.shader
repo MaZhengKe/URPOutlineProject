@@ -1,4 +1,4 @@
-Shader "KuanMi/SpotVolumetricLighting"
+Shader "KuanMi/PointVolumetricLighting"
 {
     Properties
     {
@@ -6,7 +6,6 @@ Shader "KuanMi/SpotVolumetricLighting"
         _MieK("MieK",Range(-1.0,1.0)) = 0.8
 
         _Range("Range",float) = 1.0
-        _SpotAngle("SpotAngle",Range(0,180)) = 1.0
         _lightIndex("lightIndex",int) = 0
     }
 
@@ -76,7 +75,6 @@ Shader "KuanMi/SpotVolumetricLighting"
             CBUFFER_START(UnityPerMaterial)
             float _Intensity;
             float _MieK;
-            float _SpotAngle;
             float _Range;
             int _lightIndex;
             CBUFFER_END
@@ -159,25 +157,10 @@ Shader "KuanMi/SpotVolumetricLighting"
                 int perObjectLightIndex = _lightIndex;
 
                 float4 lightPositionWS = _AdditionalLightsPosition[perObjectLightIndex];
-                half4 spotDirection = _AdditionalLightsSpotDir[perObjectLightIndex];
-
-                const float halfAngle = _SpotAngle * 0.5 * PI / 180;
-
-                float3 spotDir = -spotDirection.xyz;
-
-                Cone cone;
-                cone.C = lightPositionWS.xyz + spotDir * _Range * cos(halfAngle);
-                cone.H = lightPositionWS.xyz;
-                cone.r = _Range * tan(halfAngle) * cos(halfAngle);
 
                 Sphere sphere;
                 sphere.origin = lightPositionWS.xyz;
                 sphere.r = _Range;
-
-                Hemisphere hemisphere;
-                hemisphere.sphere = sphere;
-                hemisphere.normal = spotDir;
-                hemisphere.angle = halfAngle;
 
                 Line viewLine;
                 viewLine.origin = _WorldSpaceCameraPos;
@@ -185,17 +168,12 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 float3 TP1;
                 float3 TP2;
-                float num = LineToConePoint(viewLine, cone, TP1, TP2);
+                float num = LineToSpherePoint(viewLine, sphere, TP1, TP2);
 
-                float3 P1;
-                float3 P2;
-                float num2 = LineToHemispherePoint(viewLine, hemisphere, P1, P2);
+                clip(num - 0.5);
 
-                float sumNum = num + num2;
-                clip(sumNum - 0.5);
-
-                float3 nearPoint = TP1 + P1;;
-                float3 farPoint = TP2 + P2;;
+                float3 nearPoint = TP1;;
+                float3 farPoint = TP2;;
 
                 float3 nearLen = nearPoint - _WorldSpaceCameraPos;
                 float3 worldLen = worldPos - _WorldSpaceCameraPos;
