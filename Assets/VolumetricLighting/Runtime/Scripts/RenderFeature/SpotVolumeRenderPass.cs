@@ -7,6 +7,7 @@ namespace Other.VolumetricLighting.Scripts
     public class SpotVolumeRenderPass : ScriptableRenderPass
     {
         private readonly ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(VolumeRenderFeature.ProfileId.SpotVolume);
+        public Mesh defaultMesh { get; set; }
 
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -16,32 +17,29 @@ namespace Other.VolumetricLighting.Scripts
 
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
-                var spotHelpers = BaseVolumeLight.BaseVolumeLightList;
+                var volumeLights = BaseVolumeLight.BaseVolumeLightList;
 
-                foreach (var spotHelper in spotHelpers)
+                foreach (var volumeLight in volumeLights)
                 {
-                    var mesh = spotHelper.mesh;
-                    var transform = spotHelper.transform;
-                    
-                    var spotLight = spotHelper.Light;
                     var visibleLights = renderingData.lightData.visibleLights;
 
                     var lightIndex = -1;
                     for (int i = 0; i < visibleLights.Length; i++)
                     {
-                        if (visibleLights[i].light == spotLight)
+                        if (visibleLights[i].light == volumeLight.Light)
                         {
                             lightIndex = i - 1;
                         }
                     }
                     
-                    if(lightIndex == -1) continue;
+                    if(lightIndex == -1 || volumeLight.intensity <= float.Epsilon) continue;
 
-                    spotHelper.lightIndex = lightIndex;
+                    volumeLight.lightIndex = lightIndex;
+                    volumeLight.UpdateIfNeed();
                     
-                    spotHelper.UpdateIfNeed();
+                    var mesh  = volumeLight.mesh? volumeLight.mesh : defaultMesh;
 
-                    cmd.DrawMesh(mesh, transform.localToWorldMatrix, spotHelper.material);
+                    cmd.DrawMesh(mesh, volumeLight.matrix, volumeLight.material);
                 }
             }
             

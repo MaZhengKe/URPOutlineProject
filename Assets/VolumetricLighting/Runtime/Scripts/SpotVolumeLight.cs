@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Other.VolumetricLighting.Scripts
@@ -8,24 +7,8 @@ namespace Other.VolumetricLighting.Scripts
     public class SpotVolumeLight : BaseVolumeLight
     {
         [HideInInspector] public int num = 4;
-        private readonly string shaderName = "KuanMi/SpotVolumetricLighting";
 
         private float lastSpotAngle;
-
-        private void OnEnable()
-        {
-            Light = GetComponent<Light>();
-            material = new Material(Shader.Find(shaderName));
-            GenMesh();
-            BaseVolumeLightList.Add(this);
-        }
-
-        private void OnDisable()
-        {
-            BaseVolumeLightList.Remove(this);
-            DestroyImmediate(material);
-            material = null;
-        }
 
         private Vector3[] GetVertices()
         {
@@ -75,7 +58,7 @@ namespace Other.VolumetricLighting.Scripts
             return triangles;
         }
 
-        private void GenMesh()
+        protected override void GenMesh()
         {
             mesh = new Mesh
             {
@@ -84,7 +67,7 @@ namespace Other.VolumetricLighting.Scripts
             UpdateMesh();
         }
 
-        private void UpdateMesh()
+        protected override void UpdateMesh()
         {
             mesh.Clear();
             mesh.vertices = GetVertices();
@@ -92,33 +75,17 @@ namespace Other.VolumetricLighting.Scripts
 
             lastRange = Light.range;
             lastSpotAngle = Light.spotAngle;
-            
+
             meshNeedUpdate = false;
         }
 
-        private void UpdateMaterial()
+        public override bool LightTypeIsSupported()
         {
-            material.SetFloat(SpotAngle, Light.spotAngle);
-            material.SetFloat(Range, Light.range);
-            material.SetFloat(Intensity, intensity);
-            material.SetFloat(MieK, mieK);
-            material.SetInt(LightIndex, lightIndex);
-            
-            // material.SetInt(LightIndex, spotLight);
-
-            matNeedUpdate = false;
+            return Light.type == LightType.Spot;
         }
 
-        public override void UpdateIfNeed()
-        {
-            if (matNeedUpdate)
-                UpdateMaterial();
-            CheckIfMeshNeedUpdate();
-            if (meshNeedUpdate)
-                UpdateMesh();
-        }
 
-        private void CheckIfMeshNeedUpdate()
+        protected override void CheckIfMeshNeedUpdate()
         {
             meshNeedUpdate = Math.Abs(Light.range - lastRange) > float.Epsilon ||
                              Math.Abs(Light.spotAngle - lastSpotAngle) > float.Epsilon;

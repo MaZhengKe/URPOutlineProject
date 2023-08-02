@@ -13,6 +13,8 @@ namespace Other.VolumetricLighting.Scripts
         }
 
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+        
+        public Mesh defaultMesh;
 
         private SpotVolumeRenderPass m_SpotVolumeRenderPass;
         private DirectionalVolumeRenderPass m_DirectionalVolumeRenderPass;
@@ -22,11 +24,18 @@ namespace Other.VolumetricLighting.Scripts
 
         private const string k_ShaderName = "KuanMi/DirectionalVolumetricLighting";
         private Material m_Material;
+        
 
         public override void Create()
         {
+            defaultMesh = Resources.Load<Mesh>("KuanMi/Meshes/Sphere");
+
+            if(defaultMesh == null)
+                Debug.LogError("defaultMesh is null");
+            
             m_SpotVolumeRenderPass = new SpotVolumeRenderPass()
             {
+                defaultMesh = defaultMesh,
                 renderPassEvent = renderPassEvent
             };
 
@@ -48,7 +57,7 @@ namespace Other.VolumetricLighting.Scripts
                 return;
             }
 
-            bool shouldAdd = m_DirectionalVolumeRenderPass.Setup(renderer, m_Material);
+            bool shouldAdd = m_DirectionalVolumeRenderPass.Setup(m_Material);
             if (shouldAdd)
             {
                 renderer.EnqueuePass(m_DirectionalVolumeRenderPass);

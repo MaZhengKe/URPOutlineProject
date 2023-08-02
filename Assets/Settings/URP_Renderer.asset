@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   renderPassEvent: 500
+  defaultMesh: {fileID: 6644018162127945665, guid: b1a7bae58e0e5c64788880fcb71427a2, type: 3}
   m_Shader: {fileID: 4800000, guid: d0d30405e4c3f5c45b3b20f7f76f52fd, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:

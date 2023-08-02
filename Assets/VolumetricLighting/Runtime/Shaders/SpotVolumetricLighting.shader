@@ -47,6 +47,9 @@ Shader "KuanMi/SpotVolumetricLighting"
 
             #define MAIN_LIGHT_CALCULATE_SHADOWS
             #define _ADDITIONAL_LIGHT_SHADOWS
+
+            #pragma shader_feature_local _POINT_LIGHT
+
             // #define _MAIN_LIGHT_SHADOWS_CASCADE
 
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
@@ -159,10 +162,28 @@ Shader "KuanMi/SpotVolumetricLighting"
                 int perObjectLightIndex = _lightIndex;
 
                 float4 lightPositionWS = _AdditionalLightsPosition[perObjectLightIndex];
+
+
+                Sphere sphere;
+                sphere.origin = lightPositionWS.xyz;
+                sphere.r = _Range;
+
+                Line viewLine;
+                viewLine.origin = _WorldSpaceCameraPos;
+                viewLine.direction = normalize(ray);
+
+
+                #ifdef _POINT_LIGHT
+
+                float3 nearPoint;
+                float3 farPoint;
+                float num = LineToSpherePoint(viewLine, sphere, nearPoint, farPoint);
+                clip(num - 0.5);
+
+                #else
+
                 half4 spotDirection = _AdditionalLightsSpotDir[perObjectLightIndex];
-
                 const float halfAngle = _SpotAngle * 0.5 * PI / 180;
-
                 float3 spotDir = -spotDirection.xyz;
 
                 Cone cone;
@@ -170,21 +191,14 @@ Shader "KuanMi/SpotVolumetricLighting"
                 cone.H = lightPositionWS.xyz;
                 cone.r = _Range * tan(halfAngle) * cos(halfAngle);
 
-                Sphere sphere;
-                sphere.origin = lightPositionWS.xyz;
-                sphere.r = _Range;
-
                 Hemisphere hemisphere;
                 hemisphere.sphere = sphere;
                 hemisphere.normal = spotDir;
                 hemisphere.angle = halfAngle;
 
-                Line viewLine;
-                viewLine.origin = _WorldSpaceCameraPos;
-                viewLine.direction = normalize(ray);
-
                 float3 TP1;
                 float3 TP2;
+
                 float num = LineToConePoint(viewLine, cone, TP1, TP2);
 
                 float3 P1;
@@ -194,8 +208,10 @@ Shader "KuanMi/SpotVolumetricLighting"
                 float sumNum = num + num2;
                 clip(sumNum - 0.5);
 
-                float3 nearPoint = TP1 + P1;;
-                float3 farPoint = TP2 + P2;;
+                float3 nearPoint = TP1 + P1;
+                float3 farPoint = TP2 + P2;
+
+                #endif
 
                 float3 nearLen = nearPoint - _WorldSpaceCameraPos;
                 float3 worldLen = worldPos - _WorldSpaceCameraPos;
@@ -205,7 +221,7 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 clip(length(worldLen) - length(rayOrigin - _WorldSpaceCameraPos));
 
-                worldPos = dot(farPoint - worldPos,ray)<0 ?farPoint : worldPos;
+                worldPos = dot(farPoint - worldPos, ray) < 0 ? farPoint : worldPos;
 
                 float numSteps = 15;
 
@@ -218,7 +234,7 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 for (int i = 1; i < numSteps; i++)
                 {
-                    currentPos = rayOrigin + rayDir * (i + noise(screenUV * i + _Time.xy)) ;
+                    currentPos = rayOrigin + rayDir * (i + noise(screenUV * i + _Time.xy));
 
                     Light addLight = GetAdditionalLightForVol(_lightIndex, currentPos, half4(1, 1, 1, 1));
                     float3 light = addLight.color * addLight.distanceAttenuation * addLight.shadowAttenuation;

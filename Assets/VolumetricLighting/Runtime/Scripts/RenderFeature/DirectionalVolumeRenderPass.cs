@@ -14,7 +14,6 @@ namespace Other.VolumetricLighting.Scripts
         
         
         private VolumetricLighting m_VolumetricLighting;
-        private ScriptableRenderer m_Renderer;
         private Material m_Material;
         
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -29,12 +28,12 @@ namespace Other.VolumetricLighting.Scripts
             }
             var stack = VolumeManager.instance.stack;
             m_VolumetricLighting = stack.GetComponent<VolumetricLighting>();
-            
-            
-            
+
+            if (!m_VolumetricLighting.IsActive())
+                return;
+
             m_Material.SetFloat(Intensity, m_VolumetricLighting.intensity.value);
             m_Material.SetFloat(MieK, m_VolumetricLighting.mieK.value);
-            
 
             var cmd = CommandBufferPool.Get();
 
@@ -46,12 +45,10 @@ namespace Other.VolumetricLighting.Scripts
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
         }
-        
-        
-        public bool Setup(ScriptableRenderer renderer, Material material)
+
+        public bool Setup(Material material)
         {
             m_Material = material;
-            m_Renderer = renderer;
             return true;
         }
         

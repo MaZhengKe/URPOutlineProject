@@ -1,66 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Other.VolumetricLighting.Scripts
 {
     [ExecuteAlways]
     public class PointVolumeLight : BaseVolumeLight
     {
-        private readonly string shaderName = "KuanMi/PointVolumetricLighting";
-
-        private void OnEnable()
+        protected override void OnEnable()
         {
-            Light = GetComponent<Light>();
-            material = new Material(Shader.Find(shaderName));
-            GenMesh();
-            BaseVolumeLightList.Add(this);
+            base.OnEnable();
+            material.EnableKeyword("_POINT_LIGHT");
         }
 
-        private void OnDisable()
-        {
-            BaseVolumeLightList.Remove(this);
-            DestroyImmediate(material);
-            material = null;
-        }
-
-        private void GenMesh()
+        protected override void GenMesh()
         {
             UpdateMesh();
         }
 
-        private void UpdateMesh()
+        protected override void UpdateMesh()
         {
             lastRange = Light.range;
-            
+
             meshNeedUpdate = false;
         }
 
-        private void UpdateMaterial()
+        public override bool LightTypeIsSupported()
         {
-            material.SetFloat(Range, Light.range);
-            material.SetFloat(Intensity, intensity);
-            material.SetFloat(MieK, mieK);
-            material.SetInt(LightIndex, lightIndex);
-            
-            // material.SetInt(LightIndex, spotLight);
-
-            matNeedUpdate = false;
+            return Light.type == LightType.Point;
         }
 
-        public override void UpdateIfNeed()
-        {
-            if (matNeedUpdate)
-                UpdateMaterial();
-            CheckIfMeshNeedUpdate();
-            if (meshNeedUpdate)
-                UpdateMesh();
-        }
-
-        private void CheckIfMeshNeedUpdate()
+        protected override void CheckIfMeshNeedUpdate()
         {
             meshNeedUpdate = Math.Abs(Light.range - lastRange) > float.Epsilon;
+        }
+
+        protected override Matrix4x4 GetMatrix()
+        {
+            return Matrix4x4.TRS(transform.position, Quaternion.identity, Vector3.one * Light.range * 2);
         }
     }
 }
