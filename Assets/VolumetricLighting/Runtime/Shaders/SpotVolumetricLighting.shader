@@ -9,7 +9,7 @@ Shader "KuanMi/SpotVolumetricLighting"
         _Range("Range",float) = 1.0
         _SpotAngle("SpotAngle",Range(0,180)) = 1.0
         _lightIndex("lightIndex",int) = 0
-        
+
         _BlueNoise("BlueNoise",2D) = "white"
     }
 
@@ -77,6 +77,7 @@ Shader "KuanMi/SpotVolumetricLighting"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float2 noiseUVBias : TEXCOORD0;
             };
 
             TEXTURE2D(_BlueNoise);
@@ -95,12 +96,14 @@ Shader "KuanMi/SpotVolumetricLighting"
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+
+                output.noiseUVBias =  64 * float2(sin(_Time.w*10), cos(_Time.w*10));
                 return output;
             }
 
             float noise(float2 uv)
             {
-                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise,uv).r;   
+                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise, uv).r;
                 // return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
             }
 
@@ -239,9 +242,11 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 worldPos = dot(farPoint - worldPos, ray) < 0 ? farPoint : worldPos;
 
-                float noisev = noise(screenUV * (100 + _SinTime.y));
+                float2 noiseUV = (IN.positionCS.xy +  IN.noiseUVBias) * 0.015625;
 
-                _NumSteps += noisev * 4;
+                float noisev = noise(noiseUV);
+
+                _NumSteps += noisev * 2;
 
                 float3 rayDir = (worldPos - rayOrigin) / _NumSteps;
                 float n = length(rayDir);

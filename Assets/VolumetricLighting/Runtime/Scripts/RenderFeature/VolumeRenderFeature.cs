@@ -2,7 +2,7 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Other.VolumetricLighting.Scripts
+namespace KuanMi.VolumetricLighting
 {
     public class VolumeRenderFeature : ScriptableRendererFeature
     {
@@ -32,11 +32,11 @@ namespace Other.VolumetricLighting.Scripts
             defaultMesh = Resources.Load<Mesh>("KuanMi/Meshes/Sphere");
             blueNoise = Resources.Load<Texture>("KuanMi/LDR_LLL1_0 1");
 
-            if(defaultMesh == null)
-                Debug.LogError("defaultMesh is null");
-            
-            if(blueNoise == null)
-                Debug.LogError("blueNoise is null");
+            // if(defaultMesh == null)
+            //     Debug.LogError("defaultMesh is null");
+            //
+            // if(blueNoise == null)
+            //     Debug.LogError("blueNoise is null");
             
             m_SpotVolumeRenderPass = new SpotVolumeRenderPass()
             {

@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Other.VolumetricLighting.Scripts
+namespace KuanMi.VolumetricLighting
 {
     public abstract class BaseVolumeLight : MonoBehaviour
     {
@@ -10,55 +10,69 @@ namespace Other.VolumetricLighting.Scripts
         
         private readonly string shaderName = "KuanMi/SpotVolumetricLighting";
 
-        private static readonly int SpotAngle = Shader.PropertyToID("_SpotAngle");
-        private static readonly int Range = Shader.PropertyToID("_Range");
-        private static readonly int Intensity = Shader.PropertyToID("_Intensity");
-        private static readonly int MieK = Shader.PropertyToID("_MieK");
-        private static readonly int LightIndex = Shader.PropertyToID("_lightIndex");
+        private static readonly int SpotAngleID = Shader.PropertyToID("_SpotAngle");
+        private static readonly int RangeID = Shader.PropertyToID("_Range");
+        private static readonly int IntensityID = Shader.PropertyToID("_Intensity");
+        private static readonly int MieKID = Shader.PropertyToID("_MieK");
+        private static readonly int LightIndexID = Shader.PropertyToID("_lightIndex");
+        private static readonly int NumStepsID = Shader.PropertyToID("_NumSteps");
 
-        public float intensity
+        public float Intensity
         {
-            get => m_intensity;
+            get => intensity;
             set
             {
-                m_intensity = value;
+                intensity = value;
                 matNeedUpdate = true;
             }
         }
 
-        public float mieK
+        public float MieK
         {
-            get => m_mieK;
+            get => mieK;
             set
             {
-                m_mieK = value;
+                mieK = value;
+                matNeedUpdate = true;
+            }
+        }
+        
+        public float NumSteps
+        {
+            get => numSteps;
+            set
+            {
+                numSteps = value;
                 matNeedUpdate = true;
             }
         }
 
-        public int lightIndex
+        public int LightIndex
         {
-            get => m_lightIndex;
+            get => _lightIndex;
             set
             {
-                m_lightIndex = value;
+                _lightIndex = value;
                 matNeedUpdate = true;
             }
         }
 
         [SerializeField]
-        private float m_intensity = 1;
+        private float intensity = 1;
         [SerializeField]
-        private float m_mieK = 0.8f;
+        private float mieK = 0.8f;
+        [SerializeField]
+        private float numSteps = 4;
         
         
-        private int m_lightIndex = 1;
+        
+        private int _lightIndex = 1;
 
         [HideInInspector] public Mesh mesh;
 
         [HideInInspector] public Material material;
 
-        public Matrix4x4 matrix => GetMatrix();
+        public Matrix4x4 Matrix => GetMatrix();
 
         protected virtual Matrix4x4 GetMatrix()
         {
@@ -117,11 +131,12 @@ namespace Other.VolumetricLighting.Scripts
 
         private void UpdateMaterial()
         {
-            material.SetFloat(SpotAngle, Light.spotAngle);
-            material.SetFloat(Range, Light.range);
-            material.SetFloat(Intensity, intensity);
-            material.SetFloat(MieK, mieK);
-            material.SetInt(LightIndex, lightIndex);
+            material.SetFloat(SpotAngleID, Light.spotAngle);
+            material.SetFloat(RangeID, Light.range);
+            material.SetFloat(IntensityID, Intensity);
+            material.SetFloat(MieKID, MieK);
+            material.SetInt(LightIndexID, LightIndex);
+            material.SetFloat(NumStepsID, NumSteps);
 
             matNeedUpdate = false;
         }

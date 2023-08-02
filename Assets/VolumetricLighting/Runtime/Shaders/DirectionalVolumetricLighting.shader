@@ -5,7 +5,7 @@ Shader "KuanMi/DirectionalVolumetricLighting"
         _Intensity("_Intensity",Range(0.0,1.0)) = 1.0
         _MieK("_MieK",Range(-1.0,1.0)) = 1.0
         _NumSteps("NumSteps",float) = 15
-        
+
         _BlueNoise("BlueNoise",2D) = "white"
     }
 
@@ -61,6 +61,7 @@ Shader "KuanMi/DirectionalVolumetricLighting"
             {
                 float4 positionCS : SV_POSITION;
                 float2 texCoord0 : TEXCOORD0;
+                float2 noiseUVBias : TEXCOORD1;
             };
 
             TEXTURE2D(_BlueNoise);
@@ -78,6 +79,8 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                 output.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
                 output.texCoord0 = output.positionCS.xy * 0.5 + 0.5;
 
+                output.noiseUVBias = 64 * float2(sin(_Time.w * 10), cos(_Time.w * 10));
+
                 #if UNITY_UV_STARTS_AT_TOP
                 output.texCoord0.y = 1 - output.texCoord0.y;
                 #endif
@@ -86,41 +89,12 @@ Shader "KuanMi/DirectionalVolumetricLighting"
 
             float noise(float2 uv)
             {
-                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise,uv).r;   
+                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise, uv).r;
                 // return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
             }
 
-            float3 noise3(float2 uv)
-            {
-                return float3(noise(uv), noise(uv + float2(1, 0)), noise(uv + float2(0, 1)));
-            }
-
-
-            Light GetAdditionalLight2(uint i, float3 positionWS, half4 shadowMask)
-            {
-                int lightIndex = (i);
-
-                Light light = GetAdditionalPerObjectLight(lightIndex, positionWS);
-
-                #if USE_STRUCTURED_BUFFER_FOR_LIGHT_DATA
-    half4 occlusionProbeChannels = _AdditionalLightsBuffer[lightIndex].occlusionProbeChannels;
-                #else
-                half4 occlusionProbeChannels = _AdditionalLightsOcclusionProbes[lightIndex];
-                #endif
-                light.shadowAttenuation = AdditionalLightShadow(lightIndex, positionWS, light.direction, shadowMask,
-                                                                occlusionProbeChannels);
-                #if defined(_LIGHT_COOKIES)
-    real3 cookieColor = SampleAdditionalLightCookie(lightIndex, positionWS);
-    light.color *= cookieColor;
-                #endif
-
-                return light;
-            }
-
-
             half4 frag(Varyings IN) : SV_Target
             {
-                // return half4(IN.texCoord0.xy,0, 1.0);
                 #if UNITY_REVERSED_Z
                 real depth = SampleSceneDepth(IN.texCoord0);
                 #else
@@ -131,14 +105,13 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                 float3 rayOrigin = _WorldSpaceCameraPos;
 
                 float3 ray = worldPos - rayOrigin;
-                
-                float2 screenUV =  IN.positionCS.xy / 64;
-                    
-                // screenUV *= 64;
-                float noisev = (noise(screenUV - _Time.yy) );
+
+                float2 screenUV = (IN.positionCS.xy + IN.noiseUVBias) * 0.015625;
+
+                float noisev = (noise(screenUV));
 
                 // return float4(noisev, noisev, noisev, 1.0);
-                _NumSteps += noisev * 4;
+                _NumSteps += noisev * 2;
                 float3 rayDir = (worldPos - rayOrigin) / _NumSteps;
 
                 float n = length(rayDir);
@@ -150,7 +123,7 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                 UNITY_LOOP
                 for (int i = 1; i < _NumSteps; i++)
                 {
-                    float3 pos = rayOrigin + rayDir * (i + noise(IN.texCoord0 * i + _Time.xy));
+                    float3 pos = rayOrigin + rayDir * i;
                     float4 shadowCoord = TransformWorldToShadowCoord(pos);
                     float light = MainLightRealtimeShadow(shadowCoord);
                     light *= MieScattering2(cosAngle, _MieK);
@@ -158,25 +131,9 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                     density += light;
                 }
 
-
-                // uint pixelLightCount = GetAdditionalLightsCount();
-                // pixelLightCount = 2;
-                //
-                // for (uint lightIndex = 0u; lightIndex < pixelLightCount; ++lightIndex)
-                // {
-                //     for (int i = 1; i < numSteps; i++)
-                //     {
-                //         float3 pos = rayOrigin + rayDir * (i + noise(IN.texCoord0 * i + _Time.xy));
-                //
-                //         half4 shadowMask = half4(1, 1, 1, 1);
-                //         Light addLight = GetAdditionalLight2(lightIndex, pos, shadowMask);
-                //         // float light = addLight.distanceAttenuation * addLight.shadowAttenuation;
-                //         float light = addLight.distanceAttenuation;
-                //         light *= n;
-                //         density += light;
-                //     }
-                // }
+                // return float4(1, 1, 1, 1.0);
                 density = 1 - exp(-density);
+                density = saturate(density);
                 density *= _Intensity;
 
                 return half4(density, density, density, 1.0);

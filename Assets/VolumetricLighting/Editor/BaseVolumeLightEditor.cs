@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Other.VolumetricLighting.Scripts.Editor
+namespace KuanMi.VolumetricLighting.Editor
 {
     using UnityEditor;
 
@@ -22,9 +22,10 @@ namespace Other.VolumetricLighting.Scripts.Editor
                 return;
             }
                 
-            var t =EditorGUILayout.FloatField(new GUIContent("Intensity", "强度"), volumeLight.intensity);
-            volumeLight.intensity =  Mathf.Max(0, t);
-            volumeLight.mieK = EditorGUILayout.Slider(new GUIContent("MieK", "米氏散射系数"), volumeLight.mieK, -1, 1);
+            var t =EditorGUILayout.FloatField(new GUIContent("Intensity", "强度"), volumeLight.Intensity);
+            volumeLight.Intensity =  Mathf.Max(0, t);
+            volumeLight.MieK = EditorGUILayout.Slider(new GUIContent("MieK", "米氏散射系数\n0：均匀散射\n1：仅向光线方向散射\n-1：仅向光线反向散射"), volumeLight.MieK, -1, 1);
+            volumeLight.NumSteps = EditorGUILayout.Slider(new GUIContent("NumSteps", "采样次数\nTAA下3次足矣"), volumeLight.NumSteps, 1, 16);
         }
     }
 

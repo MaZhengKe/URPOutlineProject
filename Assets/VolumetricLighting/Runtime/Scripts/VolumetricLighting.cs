@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Other.VolumetricLighting.Scripts
+namespace KuanMi.VolumetricLighting
 {
     
     [VolumeComponentMenu("KuanMi/Volumetric Lighting")]

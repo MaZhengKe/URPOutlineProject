@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Other.VolumetricLighting.Scripts
+namespace KuanMi.VolumetricLighting
 {
     [ExecuteAlways]
     public class SpotVolumeLight : BaseVolumeLight

@@ -2,7 +2,7 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Other.VolumetricLighting.Scripts
+namespace KuanMi.VolumetricLighting
 {
     public class DirectionalVolumeRenderPass : ScriptableRenderPass
     {

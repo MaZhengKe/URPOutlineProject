@@ -2,11 +2,10 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace Other.VolumetricLighting.Scripts
+namespace KuanMi.VolumetricLighting
 {
     public class SpotVolumeRenderPass : ScriptableRenderPass
     {
-        private static readonly int NumSteps = Shader.PropertyToID("_NumSteps");
         private static readonly int BlueNoise = Shader.PropertyToID("_BlueNoise");
         
         
@@ -14,14 +13,9 @@ namespace Other.VolumetricLighting.Scripts
         public Mesh defaultMesh { get; set; }
         public Texture blueNoise { get; set; }
 
-        private VolumetricLighting m_VolumetricLighting;
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            
-            var stack = VolumeManager.instance.stack;
-            m_VolumetricLighting = stack.GetComponent<VolumetricLighting>();
-            
             var cmd = CommandBufferPool.Get();
 
             using (new ProfilingScope(cmd, m_ProfilingSampler))
@@ -41,20 +35,19 @@ namespace Other.VolumetricLighting.Scripts
                         }
                     }
                     
-                    if(lightIndex == -1 || volumeLight.intensity <= float.Epsilon) continue;
+                    if(lightIndex == -1 || volumeLight.Intensity <= float.Epsilon) continue;
 
-                    volumeLight.lightIndex = lightIndex;
+                    volumeLight.LightIndex = lightIndex;
                     volumeLight.UpdateIfNeed();
                     
                     var mesh  = volumeLight.mesh? volumeLight.mesh : defaultMesh;
                     
-                    volumeLight.material.SetFloat(NumSteps,m_VolumetricLighting.numSteps.value );
                     if (blueNoise != null)
                     {
                         volumeLight.material.SetTexture(BlueNoise, blueNoise);
                     }
 
-                    cmd.DrawMesh(mesh, volumeLight.matrix, volumeLight.material);
+                    cmd.DrawMesh(mesh, volumeLight.Matrix, volumeLight.material);
                 }
             }
             
