@@ -4,10 +4,13 @@ Shader "KuanMi/SpotVolumetricLighting"
     {
         _Intensity("Intensity",Range(0.0,50.0)) = 1.0
         _MieK("MieK",Range(-1.0,1.0)) = 0.8
+        _NumSteps("NumSteps",float) = 15
 
         _Range("Range",float) = 1.0
         _SpotAngle("SpotAngle",Range(0,180)) = 1.0
         _lightIndex("lightIndex",int) = 0
+        
+        _BlueNoise("BlueNoise",2D) = "white"
     }
 
     SubShader
@@ -76,11 +79,15 @@ Shader "KuanMi/SpotVolumetricLighting"
                 float4 positionCS : SV_POSITION;
             };
 
+            TEXTURE2D(_BlueNoise);
+            SAMPLER(sampler_BlueNoise);
+
             CBUFFER_START(UnityPerMaterial)
             float _Intensity;
             float _MieK;
             float _SpotAngle;
             float _Range;
+            float _NumSteps;
             int _lightIndex;
             CBUFFER_END
 
@@ -93,7 +100,8 @@ Shader "KuanMi/SpotVolumetricLighting"
 
             float noise(float2 uv)
             {
-                return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
+                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise,uv).r;   
+                // return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
             }
 
             float3 noise3(float2 uv)
@@ -147,7 +155,15 @@ Shader "KuanMi/SpotVolumetricLighting"
 
             half4 frag(Varyings IN) : SV_Target
             {
+                // 0-1
                 float2 screenUV = GetNormalizedScreenSpaceUV(IN.positionCS);
+
+                // return float4(noiseUV, 0, 1);
+
+                // float noi = noise(noiseUV * _Time.xy);
+                // return float4(noi, noi, noi, 1);
+
+                // return float4(screenUV, 0, 1);
 
                 // return float4(screenUV, 0, 1);
                 #if UNITY_REVERSED_Z
@@ -223,18 +239,21 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 worldPos = dot(farPoint - worldPos, ray) < 0 ? farPoint : worldPos;
 
-                float numSteps = 15;
+                float noisev = noise(screenUV * (100 + _SinTime.y));
 
-                float3 rayDir = (worldPos - rayOrigin) / numSteps;
+                _NumSteps += noisev * 4;
+
+                float3 rayDir = (worldPos - rayOrigin) / _NumSteps;
                 float n = length(rayDir);
 
                 float3 density = 0;
 
                 float3 currentPos;
 
-                for (int i = 1; i < numSteps; i++)
+                for (int i = 1; i < _NumSteps; i++)
                 {
-                    currentPos = rayOrigin + rayDir * (i + noise(screenUV * i + _Time.xy));
+                    // currentPos = rayOrigin + rayDir * (i + noise(noiseUV + _Time.xy));
+                    currentPos = rayOrigin + rayDir * i;
 
                     Light addLight = GetAdditionalLightForVol(_lightIndex, currentPos, half4(1, 1, 1, 1));
                     float3 light = addLight.color * addLight.distanceAttenuation * addLight.shadowAttenuation;

@@ -4,6 +4,9 @@ Shader "KuanMi/DirectionalVolumetricLighting"
     {
         _Intensity("_Intensity",Range(0.0,1.0)) = 1.0
         _MieK("_MieK",Range(-1.0,1.0)) = 1.0
+        _NumSteps("NumSteps",float) = 15
+        
+        _BlueNoise("BlueNoise",2D) = "white"
     }
 
     SubShader
@@ -60,9 +63,13 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                 float2 texCoord0 : TEXCOORD0;
             };
 
+            TEXTURE2D(_BlueNoise);
+            SAMPLER(sampler_BlueNoise);
+
             CBUFFER_START(UnityPerMaterial)
             float _Intensity;
             float _MieK;
+            float _NumSteps;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -79,7 +86,8 @@ Shader "KuanMi/DirectionalVolumetricLighting"
 
             float noise(float2 uv)
             {
-                return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
+                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise,uv).r;   
+                // return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
             }
 
             float3 noise3(float2 uv)
@@ -121,9 +129,17 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                 float3 worldPos = ComputeWorldSpacePosition(IN.texCoord0, depth, UNITY_MATRIX_I_VP);
 
                 float3 rayOrigin = _WorldSpaceCameraPos;
-                float numSteps = 30;
+
                 float3 ray = worldPos - rayOrigin;
-                float3 rayDir = (worldPos - rayOrigin) / numSteps;
+                
+                float2 screenUV =  IN.positionCS.xy / 64;
+                    
+                // screenUV *= 64;
+                float noisev = (noise(screenUV - _Time.yy) );
+
+                // return float4(noisev, noisev, noisev, 1.0);
+                _NumSteps += noisev * 4;
+                float3 rayDir = (worldPos - rayOrigin) / _NumSteps;
 
                 float n = length(rayDir);
 
@@ -131,7 +147,8 @@ Shader "KuanMi/DirectionalVolumetricLighting"
 
                 float cosAngle = dot(-_MainLightPosition.xyz, normalize(ray));
 
-                for (int i = 1; i < numSteps; i++)
+                UNITY_LOOP
+                for (int i = 1; i < _NumSteps; i++)
                 {
                     float3 pos = rayOrigin + rayDir * (i + noise(IN.texCoord0 * i + _Time.xy));
                     float4 shadowCoord = TransformWorldToShadowCoord(pos);

@@ -11,10 +11,12 @@ namespace Other.VolumetricLighting.Scripts
         
         private static readonly int Intensity = Shader.PropertyToID("_Intensity");
         private static readonly int MieK = Shader.PropertyToID("_MieK");
-        
+        private static readonly int NumSteps = Shader.PropertyToID("_NumSteps");
+        private static readonly int BlueNoise = Shader.PropertyToID("_BlueNoise");
         
         private VolumetricLighting m_VolumetricLighting;
         private Material m_Material;
+        public Texture blueNoise { get; set; }
         
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
@@ -34,6 +36,9 @@ namespace Other.VolumetricLighting.Scripts
 
             m_Material.SetFloat(Intensity, m_VolumetricLighting.intensity.value);
             m_Material.SetFloat(MieK, m_VolumetricLighting.mieK.value);
+            m_Material.SetFloat(NumSteps, m_VolumetricLighting.numSteps.value);
+            
+            m_Material.SetTexture(BlueNoise, blueNoise);
 
             var cmd = CommandBufferPool.Get();
 
@@ -54,8 +59,6 @@ namespace Other.VolumetricLighting.Scripts
         
         public void Dispose()
         {
-            
-            
         }
     }
 }
