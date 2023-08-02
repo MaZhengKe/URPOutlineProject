@@ -105,7 +105,6 @@ Shader "KuanMi/SpotVolumetricLighting"
             
             float noise(float2 uv)
             {
-                Hash(_Time)
                 int index = random(_Time) * 64;
                 return SAMPLE_TEXTURE2D_ARRAY(_BlueNoise, sampler_BlueNoise, uv, index).r;
             }
