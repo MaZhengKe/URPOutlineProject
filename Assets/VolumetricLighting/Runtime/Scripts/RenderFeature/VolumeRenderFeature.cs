@@ -55,6 +55,9 @@ namespace KuanMi.VolumetricLighting
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if(renderingData.cameraData.camera.name == "Preview Scene Camera")
+                return;
+
             renderer.EnqueuePass(m_SpotVolumeRenderPass);
 
             if (!GetMaterial())
