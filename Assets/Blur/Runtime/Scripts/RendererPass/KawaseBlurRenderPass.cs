@@ -47,7 +47,7 @@ namespace KuanMi.Blur
             }
 
             m_Material.SetFloat(BlurRadius, (float)iteration / blurVolume.DownSample.value + blurRadius);
-            Blit(cmd, needSwitch ? m_BlurTexture1 : m_BlurTexture2, m_Renderer.cameraColorTargetHandle, m_Material);
+            Blit(cmd, needSwitch ? m_BlurTexture1 : m_BlurTexture2, isMask ? m_MaskTexture : m_Renderer.cameraColorTargetHandle, m_Material);
         }
 
 

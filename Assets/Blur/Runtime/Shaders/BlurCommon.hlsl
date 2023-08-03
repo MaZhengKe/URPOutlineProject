@@ -13,7 +13,7 @@ TEXTURE2D(_BlitTexture);
 SAMPLER(sampler_BlitTexture);
 
 
-CBUFFER_START(UnityPerMaterial)
+CBUFFER_START(BlurCommon)
 float4 _BlitTexture_ST;
 float4 _BlitTexture_TexelSize;
 

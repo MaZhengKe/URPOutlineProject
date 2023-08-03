@@ -18,7 +18,7 @@ MonoBehaviour:
     m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 6
   DownSample:
     m_OverrideState: 1
     m_Value: 1
@@ -85,6 +85,7 @@ MonoBehaviour:
   - {fileID: 6149648845761051688}
   - {fileID: -7939871064371296884}
   - {fileID: -6466418328916409190}
+  - {fileID: 5194098379604301456}
 --- !u!114 &2499473457418846229
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -100,13 +101,47 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 10
   Iteration:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 10
   DownSample:
     m_OverrideState: 1
     m_Value: 1
+--- !u!114 &5194098379604301456
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ca642bde7d16384a81f23b78f63bad7, type: 3}
+  m_Name: MaskBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  isMask:
+    m_OverrideState: 1
+    m_Value: 1
+  maskType:
+    m_OverrideState: 1
+    m_Value: 0
+  areaSize:
+    m_OverrideState: 1
+    m_Value: 1.36
+  areaSmooth:
+    m_OverrideState: 1
+    m_Value: 20
+  offset:
+    m_OverrideState: 1
+    m_Value: 0.023
+  center:
+    m_OverrideState: 1
+    m_Value: {x: -0.36, y: 0.04}
+  radius:
+    m_OverrideState: 1
+    m_Value: 3.58
 --- !u!114 &6149648845761051688
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -125,7 +160,7 @@ MonoBehaviour:
     m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 6
   DownSample:
     m_OverrideState: 1
     m_Value: 1

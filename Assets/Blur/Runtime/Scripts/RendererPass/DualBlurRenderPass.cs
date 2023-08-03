@@ -65,7 +65,7 @@ namespace KuanMi.Blur
             }
 
             // Blit(cmd, lastUp, m_Renderer.cameraColorTargetHandle);
-            Blitter.BlitCameraTexture(cmd, lastUp, m_Renderer.cameraColorTargetHandle, RenderBufferLoadAction.DontCare,
+            Blitter.BlitCameraTexture(cmd, lastUp, isMask ? m_MaskTexture : m_Renderer.cameraColorTargetHandle, RenderBufferLoadAction.DontCare,
                 RenderBufferStoreAction.Store, m_Material, 0);
         }
 

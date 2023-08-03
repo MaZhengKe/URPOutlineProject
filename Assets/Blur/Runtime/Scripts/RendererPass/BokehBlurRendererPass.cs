@@ -37,7 +37,7 @@ namespace KuanMi.Blur
             
             m_Material.SetVector(GoldenRot, mGoldenRot);
             m_Material.SetVector(Params, new Vector4(blurVolume.Iteration.value, blurVolume.BlurRadius.value, 1f / width, 1f / height));
-            Blit(cmd,  m_BlurTexture , m_Renderer.cameraColorTargetHandle, m_Material);
+            Blit(cmd, m_BlurTexture, isMask ? m_MaskTexture : m_Renderer.cameraColorTargetHandle, m_Material);
         }
 
         public override void Dispose()

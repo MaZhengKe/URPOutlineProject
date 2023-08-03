@@ -9,11 +9,13 @@ namespace KuanMi.Blur
         protected abstract BlurRendererFeature.ProfileId ProfileId { get; }
         
         protected abstract string ShaderName { get; }
+        protected string MaskBlendShaderName = "KuanMi/MaskBlend";
 
         protected Shader m_Shader;
 
         protected ScriptableRenderer m_Renderer;
         protected Material m_Material;
+        protected Material m_BlendMaterial;
 
         protected RenderTextureDescriptor descriptor;
         protected static readonly int BlurRadius = Shader.PropertyToID("_Offset");
@@ -62,6 +64,7 @@ namespace KuanMi.Blur
             }
 
             m_Material = CoreUtils.CreateEngineMaterial(m_Shader);
+            m_BlendMaterial = CoreUtils.CreateEngineMaterial(Shader.Find(MaskBlendShaderName));
 
             return m_Material != null;
         }

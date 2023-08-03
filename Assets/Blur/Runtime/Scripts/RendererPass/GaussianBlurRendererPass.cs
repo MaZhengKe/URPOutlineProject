@@ -48,7 +48,7 @@ namespace KuanMi.Blur
                 CoreUtils.DrawFullScreen(cmd, m_Material, m_BlurTexture1, block2, 0);
             }
 
-            Blit(cmd, m_BlurTexture1, m_Renderer.cameraColorTargetHandle);
+            Blit(cmd, m_BlurTexture1, isMask ? m_MaskTexture : m_Renderer.cameraColorTargetHandle);
         }
 
         public override void Dispose()
