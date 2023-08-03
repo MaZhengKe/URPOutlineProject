@@ -262,7 +262,7 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                     Light addLight = GetAdditionalLightForVol(_lightIndex, currentPos, half4(1, 1, 1, 1));
                     float distanceAttenuation = lerp(1, addLight.distanceAttenuation, _Para01.y);
-                    float shadowAttenuation = lerp(1, addLight.shadowAttenuation, _Para01.z);
+                    float shadowAttenuation = RangeRemapFrom01(-_Para01.z, 1, addLight.shadowAttenuation);
                     float3 light = addLight.color * distanceAttenuation * shadowAttenuation;
 
                     float cosAngle = dot(-addLight.direction, normalize(ray));
@@ -272,6 +272,7 @@ Shader "KuanMi/SpotVolumetricLighting"
                     density += light;
                 }
 
+                density = max(0, density);
                 density = 1 - exp(-_Para01.x * density);
                 density *=  _MaxIntensity;
 

@@ -92,7 +92,7 @@ namespace KuanMi.VolumetricLighting
 
         [SerializeField] private Color maxIntensity = Color.white;
         [SerializeField] private float distanceAttenuation = 1;
-        [SerializeField] private float shadowAttenuation  = 1;
+        [SerializeField] private float shadowAttenuation;
         [SerializeField] private float mieK = 0.8f;
         [SerializeField] private float numSteps = 3;
         [SerializeField] private float evenness = 1;
