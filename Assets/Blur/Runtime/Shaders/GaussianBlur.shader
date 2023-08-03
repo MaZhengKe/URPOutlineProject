@@ -18,20 +18,7 @@
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
-
-            TEXTURE2D(_BlitTexture);
-            SAMPLER(sampler_BlitTexture);
-
-            CBUFFER_START(UnityPerMaterial)
-            half4 _BlurOffset;
-            CBUFFER_END
-
-            struct Attributes
-            {
-                uint vertexID : VERTEXID_SEMANTIC;
-                float4 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
-            };
+            #include "BlurCommon.hlsl"
 
             struct Varyings
             {
@@ -42,7 +29,7 @@
                 float4 uv45: TEXCOORD3;
             };
 
-            Varyings vert(Attributes IN)
+            Varyings vert(DefaultAttributes IN)
             {
                 Varyings output;
                 output.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);

@@ -1,9 +1,3 @@
-struct Attributes
-{
-    uint vertexID : VERTEXID_SEMANTIC;
-    float4 positionOS : POSITION;
-    float2 uv : TEXCOORD0;
-};
 
 struct v2f_DownSample
 {
@@ -24,19 +18,7 @@ struct v2f_UpSample
     float4 uv67: TEXCOORD4;
 };
 
-TEXTURE2D(_BlitTexture);
-SAMPLER(sampler_BlitTexture);
-
-
-CBUFFER_START(UnityPerMaterial)
-float4 _BlitTexture_ST;
-float4 _BlitTexture_TexelSize;
-uniform half _Offset;
-
-CBUFFER_END
-
-
-v2f_DownSample vert_DownSample(Attributes IN)
+v2f_DownSample vert_DownSample(DefaultAttributes IN)
 {
     v2f_DownSample output;
     output.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
@@ -70,7 +52,7 @@ half4 frag_DownSample(v2f_DownSample i): SV_Target
 }
 
 
-v2f_UpSample vert_UpSample(Attributes IN)
+v2f_UpSample vert_UpSample(DefaultAttributes IN)
 {
     v2f_UpSample output;
     output.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
