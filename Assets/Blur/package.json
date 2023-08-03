@@ -2,7 +2,7 @@
   "name": "top.kuanmi.blur",
   "author": "KuanMi",
   "displayName": "Blur",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "unity": "2022.1",
   "description": "Blur for URP",
   "dependencies": {
