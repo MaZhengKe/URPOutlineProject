@@ -38,6 +38,7 @@ MonoBehaviour:
   - {fileID: 6898148007478119721}
   - {fileID: -2301025411271155102}
   - {fileID: 2499473457418846229}
+  - {fileID: 6149648845761051688}
 --- !u!114 &2499473457418846229
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -52,14 +53,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   BlurRadius:
-    m_OverrideState: 1
-    m_Value: 7.44
+    m_OverrideState: 0
+    m_Value: 4
   Iteration:
     m_OverrideState: 1
-    m_Value: 2
+    m_Value: 4
   DownSample:
     m_OverrideState: 1
-    m_Value: 10
+    m_Value: 1
+--- !u!114 &6149648845761051688
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6b8d24a2c2a4c408dff567e9e31dccb, type: 3}
+  m_Name: KawaseBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  BlurRadius:
+    m_OverrideState: 0
+    m_Value: 4
+  Iteration:
+    m_OverrideState: 1
+    m_Value: 4
+  DownSample:
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &6898148007478119721
 MonoBehaviour:
   m_ObjectHideFlags: 3

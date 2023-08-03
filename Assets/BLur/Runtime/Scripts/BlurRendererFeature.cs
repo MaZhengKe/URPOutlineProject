@@ -10,18 +10,26 @@ namespace BLur.Runtime
         
         private const string k_ShaderName = "KuanMi/Blur";
         
-        private BlurRendererPass m_BlurRendererPass;
-        private Material m_Material1;
-        private Material m_Material2;
+        private GaussianBlurRendererPass _mGaussianBlurRendererPass;
+        private KawaseBlurRenderPass m_KawaseBlurRenderPass;
+
+        private Material m_Material;
+        
         [SerializeField, HideInInspector] private Shader m_Shader;
         public enum ProfileId
         {
-            Blur,
+            GaussianBlur,
+            KawaseBlur,
         }
 
         public override void Create()
         {
-            m_BlurRendererPass = new BlurRendererPass()
+            _mGaussianBlurRendererPass = new GaussianBlurRendererPass()
+            {
+                renderPassEvent = renderPassEvent
+            };
+            
+            m_KawaseBlurRenderPass = new KawaseBlurRenderPass()
             {
                 renderPassEvent = renderPassEvent
             };
@@ -40,17 +48,23 @@ namespace BLur.Runtime
                 return;
             }
 
-            bool shouldAdd = m_BlurRendererPass.Setup(renderer, m_Material1, m_Material2);
+            bool shouldAdd = _mGaussianBlurRendererPass.Setup(renderer, m_Material);
             if (shouldAdd)
             {
-                renderer.EnqueuePass(m_BlurRendererPass);
+                renderer.EnqueuePass(_mGaussianBlurRendererPass);
+            }
+            
+            bool shouldAdd2 = m_KawaseBlurRenderPass.Setup(renderer, m_Material);
+            if (shouldAdd2)
+            {
+                renderer.EnqueuePass(m_KawaseBlurRenderPass);
             }
         }
         
         
         private bool GetMaterial()
         {
-            if (m_Material1 != null)
+            if (m_Material != null)
             {
                 return true;
             }
@@ -64,17 +78,17 @@ namespace BLur.Runtime
                 }
             }
 
-            m_Material1 = CoreUtils.CreateEngineMaterial(m_Shader);
-            m_Material2 = CoreUtils.CreateEngineMaterial(m_Shader);
+            m_Material = CoreUtils.CreateEngineMaterial(m_Shader);
 
-            return m_Material1 != null;
+            return m_Material != null;
         }
 
         protected override void Dispose(bool disposing)
         {
-            m_BlurRendererPass?.Dispose();
-            CoreUtils.Destroy(m_Material1);
-            CoreUtils.Destroy(m_Material2);
+            _mGaussianBlurRendererPass?.Dispose();
+            m_KawaseBlurRenderPass?.Dispose();
+            
+            CoreUtils.Destroy(m_Material);
         }
 
     }

@@ -5,19 +5,19 @@ using UnityEngine.Rendering.Universal;
 
 namespace BLur.Runtime
 {
-    public class BlurRendererPass : ScriptableRenderPass
+    public class GaussianBlurRendererPass : ScriptableRenderPass
     {
-        private readonly ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(BlurRendererFeature.ProfileId.Blur);
+        private readonly ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(BlurRendererFeature.ProfileId.GaussianBlur);
 
         private ScriptableRenderer m_Renderer;
-        private Material m_Material1;
-        private Material m_Material2;
+        private Material m_Material;
 
         private RTHandle m_BlurTexture1;
         private RTHandle m_BlurTexture2;
 
         private GaussianBlur m_GaussianBlur;
         private static readonly int BlurOffset = Shader.PropertyToID("_BlurOffset");
+        private static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
@@ -26,20 +26,22 @@ namespace BLur.Runtime
 
             var stack = VolumeManager.instance.stack;
             m_GaussianBlur = stack.GetComponent<GaussianBlur>();
-            
+
             RenderTextureDescriptor descriptor = cameraTargetDescriptor;
             descriptor.depthBufferBits = 0;
             descriptor.msaaSamples = 1;
             descriptor.width /= m_GaussianBlur.DownSample.value;
             descriptor.height /= m_GaussianBlur.DownSample.value;
 
-            RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture1, descriptor, FilterMode.Bilinear,TextureWrapMode.Clamp);
-            RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture2, descriptor, FilterMode.Bilinear,TextureWrapMode.Clamp);
+            RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture1, descriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name:"_BlurTex1");
+            RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture2, descriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name:"_BlurTex2");
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (m_Material1 == null)
+            if (m_Material == null)
             {
                 Debug.LogError("Material is null");
                 return;
@@ -47,10 +49,10 @@ namespace BLur.Runtime
 
             var stack = VolumeManager.instance.stack;
             m_GaussianBlur = stack.GetComponent<GaussianBlur>();
-            
-            if(!m_GaussianBlur.IsActive())
+
+            if (!m_GaussianBlur.IsActive())
                 return;
-            
+
             var blurRadius = m_GaussianBlur.BlurRadius.value;
             var iteration = m_GaussianBlur.Iteration.value;
 
@@ -65,25 +67,33 @@ namespace BLur.Runtime
                 Blit(cmd, m_Renderer.cameraColorTargetHandle, m_BlurTexture1);
                 for (int i = 0; i < iteration; i++)
                 {
-                    m_Material1.SetVector(BlurOffset, new Vector4(blurRadius / width, 0, 0, 0));
-                    Blit(cmd, m_BlurTexture1, m_BlurTexture2, m_Material1);
+                    
+                    MaterialPropertyBlock block = new MaterialPropertyBlock();
+                    block.SetVector(BlurOffset, new Vector4(blurRadius / width, 0, 0, 0));
+                    block.SetTexture(BlitTexture, m_BlurTexture1);
+                    CoreUtils.DrawFullScreen(cmd, m_Material, m_BlurTexture2,block,0);
 
-                    m_Material2.SetVector(BlurOffset, new Vector4(0, blurRadius / height, 0, 0));
-                    Blit(cmd, m_BlurTexture2, m_BlurTexture1, m_Material2);
+                    
+                    MaterialPropertyBlock block2 = new MaterialPropertyBlock();
+                    block2.SetVector(BlurOffset, new Vector4(0, blurRadius / height, 0, 0));
+                    block2.SetTexture(BlitTexture, m_BlurTexture2);
+                    CoreUtils.DrawFullScreen(cmd, m_Material, m_BlurTexture1,block2,0);
                 }
-                Blit(cmd, m_BlurTexture1,m_Renderer.cameraColorTargetHandle);
+
+                Blit(cmd, m_BlurTexture1, m_Renderer.cameraColorTargetHandle);
             }
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
         }
 
-        public bool Setup(ScriptableRenderer renderer, Material material1, Material material2)
+        public bool Setup(ScriptableRenderer renderer, Material material)
         {
-            m_Material1 = material1;
-            m_Material2 = material2;
+            m_Material = material;
             m_Renderer = renderer;
-            return true;
+
+            m_GaussianBlur = VolumeManager.instance.stack.GetComponent<GaussianBlur>();
+            return m_GaussianBlur.IsActive();
         }
 
         public void Dispose()
