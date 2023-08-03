@@ -1,6 +1,6 @@
 ﻿using UnityEngine.Rendering;
 
-namespace BLur.Runtime.Volume
+namespace KuanMi.Blur.Runtime
 {
     [VolumeComponentMenu("KuanMi/Blur/GaussianBlur")]
     public class GaussianBlur : BaseBlur

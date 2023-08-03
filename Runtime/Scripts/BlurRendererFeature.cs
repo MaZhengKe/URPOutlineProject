@@ -1,9 +1,10 @@
-﻿using BLur.Runtime.Volume;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace BLur.Runtime
+namespace KuanMi.Blur.Runtime
 {
     public class BlurRendererFeature : ScriptableRendererFeature
     {
@@ -14,6 +15,10 @@ namespace BLur.Runtime
         private GaussianBlurRendererPass _mGaussianBlurRendererPass;
         private KawaseBlurRenderPass m_KawaseBlurRenderPass;
         private DualBlurRenderPass m_DualBlurRenderPass;
+        private BokehBlurRendererPass m_BokehBlurRendererPass;
+        
+        
+        protected List<BaseBlurRendererPass> rendererPasses = new List<BaseBlurRendererPass>();
 
         private Material m_Material;
         
@@ -23,6 +28,7 @@ namespace BLur.Runtime
             GaussianBlur,
             KawaseBlur,
             DualBlur,
+            BokehBlur
         }
 
         public override void Create()
@@ -31,16 +37,24 @@ namespace BLur.Runtime
             {
                 renderPassEvent = renderPassEvent
             };
+            rendererPasses.Add(_mGaussianBlurRendererPass);
             
             m_KawaseBlurRenderPass = new KawaseBlurRenderPass()
             {
                 renderPassEvent = renderPassEvent
             };
+            rendererPasses.Add(m_KawaseBlurRenderPass);
             
             m_DualBlurRenderPass = new DualBlurRenderPass()
             {
                 renderPassEvent = renderPassEvent
             };
+            rendererPasses.Add(m_DualBlurRenderPass);
+            
+            rendererPasses.Add(m_BokehBlurRendererPass = new BokehBlurRendererPass()
+            {
+                renderPassEvent = renderPassEvent
+            });
 
         }
 
@@ -55,24 +69,34 @@ namespace BLur.Runtime
                     GetType().Name, name);
                 return;
             }
-
-            bool shouldAdd = _mGaussianBlurRendererPass.Setup(renderer, m_Material);
-            if (shouldAdd)
+            
+            // foreach (var rendererPass in rendererPasses.Where(rendererPass => rendererPass.Setup(renderer, m_Material)))
+            // {
+            //     Debug.Log(rendererPass + " " + Time.frameCount);
+            //     renderer.EnqueuePass(rendererPass);
+            // }
+            
+            if(_mGaussianBlurRendererPass.Setup(renderer, m_Material))
             {
                 renderer.EnqueuePass(_mGaussianBlurRendererPass);
             }
             
-            bool shouldAdd2 = m_KawaseBlurRenderPass.Setup(renderer, m_Material);
-            if (shouldAdd2)
+            if(m_KawaseBlurRenderPass.Setup(renderer, m_Material))
             {
                 renderer.EnqueuePass(m_KawaseBlurRenderPass);
             }
             
-            bool shouldAdd3 = m_DualBlurRenderPass.Setup(renderer, m_Material);
-            if (shouldAdd3)
+            if(m_DualBlurRenderPass.Setup(renderer, m_Material))
             {
                 renderer.EnqueuePass(m_DualBlurRenderPass);
             }
+            
+            if(m_BokehBlurRendererPass.Setup(renderer, m_Material))
+            {
+                renderer.EnqueuePass(m_BokehBlurRendererPass);
+            }
+            
+            
         }
         
         
