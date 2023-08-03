@@ -2,13 +2,15 @@ Shader "KuanMi/SpotVolumetricLighting"
 {
     Properties
     {
-        _Intensity("Intensity",Range(0.0,50.0)) = 1.0
+        [HDR]_MaxIntensity("MaxIntensity",Color) = (1,1,1,1)
+
         _MieK("MieK",Range(-1.0,1.0)) = 0.8
         _NumSteps("NumSteps",float) = 15
 
         _Range("Range",float) = 1.0
         _SpotAngle("SpotAngle",Range(0,180)) = 1.0
         _lightIndex("lightIndex",int) = 0
+        _Para01("Para01",Vector) = (1,0,0,0)
 
         _BlueNoise("BlueNoise",2DArray) = "white"
     }
@@ -83,12 +85,13 @@ Shader "KuanMi/SpotVolumetricLighting"
             SAMPLER(sampler_BlueNoise);
 
             CBUFFER_START(UnityPerMaterial)
-            float _Intensity;
+            float3 _MaxIntensity;
             float _MieK;
             float _SpotAngle;
             float _Range;
             float _NumSteps;
             int _lightIndex;
+            float4 _Para01; 
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -139,7 +142,6 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 return light;
             }
-
 
             Light GetAdditionalLightForVol(uint lightIndex, float3 positionWS, half4 shadowMask)
             {
@@ -221,7 +223,7 @@ Shader "KuanMi/SpotVolumetricLighting"
                 float num2 = LineToHemispherePoint(viewLine, hemisphere, P1, P2);
 
                 float sumNum = num + num2;
-                clip(sumNum - 0.5);
+                clip(sumNum - 1.5);
 
                 float3 nearPoint = TP1 + P1;
                 float3 farPoint = TP2 + P2;
@@ -229,8 +231,10 @@ Shader "KuanMi/SpotVolumetricLighting"
                 #endif
 
                 float3 nearLen = nearPoint - _WorldSpaceCameraPos;
+                float3 farLen = farPoint - _WorldSpaceCameraPos;
                 float3 worldLen = worldPos - _WorldSpaceCameraPos;
 
+                clip(dot(farLen, ray));
 
                 float3 rayOrigin = dot(nearLen, ray) > 0 ? nearPoint : _WorldSpaceCameraPos;
 
@@ -251,13 +255,15 @@ Shader "KuanMi/SpotVolumetricLighting"
 
                 float3 currentPos;
 
-                for (int i = 1; i < _NumSteps; i++)
+                for (int i = 0; i < _NumSteps; i++)
                 {
                     // currentPos = rayOrigin + rayDir * (i + noise(noiseUV + _Time.xy));
                     currentPos = rayOrigin + rayDir * i;
 
                     Light addLight = GetAdditionalLightForVol(_lightIndex, currentPos, half4(1, 1, 1, 1));
-                    float3 light = addLight.color * addLight.distanceAttenuation * addLight.shadowAttenuation;
+                    float distanceAttenuation = lerp(1, addLight.distanceAttenuation, _Para01.y);
+                    float shadowAttenuation = lerp(1, addLight.shadowAttenuation, _Para01.z);
+                    float3 light = addLight.color * distanceAttenuation * shadowAttenuation;
 
                     float cosAngle = dot(-addLight.direction, normalize(ray));
                     light *= MieScattering2(cosAngle, _MieK);
@@ -266,8 +272,8 @@ Shader "KuanMi/SpotVolumetricLighting"
                     density += light;
                 }
 
-                density = 1 - exp(-density);
-                density *= _Intensity;
+                density = 1 - exp(-_Para01.x * density);
+                density *=  _MaxIntensity;
 
                 return half4(density, 1.0);
             }

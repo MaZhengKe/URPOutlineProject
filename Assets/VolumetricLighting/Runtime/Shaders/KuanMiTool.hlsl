@@ -205,9 +205,9 @@ int LineToConePoint(Line _line, Cone cone, out float3 L1, out float3 L2)
 
     float delta = b * b - 4 * a * c;
 
-    if (delta < 0)
+    if (delta <= 0)
     {
-        return -1;
+        return 0;
     }
 
     float t1 = (-b - sqrt(delta)) / (2 * a);
@@ -222,12 +222,12 @@ int LineToConePoint(Line _line, Cone cone, out float3 L1, out float3 L2)
     float hl = length(h);
     int i = 2;
 
-    if (d1 > hl || d1 < 0)
+    if (d1 > hl || d1 < 0 )
     {
         L1 = 0;
         i--;
     }
-    if (d2 > hl || d2 < 0)
+    if (d2 > hl || d2 < 0 )
     {
         L2 = 0;
         i--;

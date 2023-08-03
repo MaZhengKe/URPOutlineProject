@@ -1,28 +1,51 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace KuanMi.VolumetricLighting
 {
     public abstract class BaseVolumeLight : MonoBehaviour
     {
         public static readonly List<BaseVolumeLight> BaseVolumeLightList = new();
-        
+
         private readonly string shaderName = "KuanMi/SpotVolumetricLighting";
 
         private static readonly int SpotAngleID = Shader.PropertyToID("_SpotAngle");
         private static readonly int RangeID = Shader.PropertyToID("_Range");
-        private static readonly int IntensityID = Shader.PropertyToID("_Intensity");
+        private static readonly int MaxIntensityID = Shader.PropertyToID("_MaxIntensity");
+        private static readonly int MinIntensityID = Shader.PropertyToID("_MinIntensity");
         private static readonly int MieKID = Shader.PropertyToID("_MieK");
         private static readonly int LightIndexID = Shader.PropertyToID("_lightIndex");
         private static readonly int NumStepsID = Shader.PropertyToID("_NumSteps");
+        private static readonly int Para01ID = Shader.PropertyToID("_Para01");
 
-        public float Intensity
+        public Color MaxIntensity
         {
-            get => intensity;
+            get => maxIntensity;
             set
             {
-                intensity = value;
+                maxIntensity =  value;
+                matNeedUpdate = true;
+            }
+        }
+        
+        public float DistanceAttenuation
+        {
+            get => distanceAttenuation;
+            set
+            {
+                distanceAttenuation = value;
+                matNeedUpdate = true;
+            }
+        }
+        
+        public float ShadowAttenuation
+        {
+            get => shadowAttenuation;
+            set
+            {
+                shadowAttenuation = value;
                 matNeedUpdate = true;
             }
         }
@@ -36,13 +59,23 @@ namespace KuanMi.VolumetricLighting
                 matNeedUpdate = true;
             }
         }
-        
+
         public float NumSteps
         {
             get => numSteps;
             set
             {
                 numSteps = value;
+                matNeedUpdate = true;
+            }
+        }
+
+        public float Evenness
+        {
+            get => evenness;
+            set
+            {
+                evenness = Mathf.Max(0, value);
                 matNeedUpdate = true;
             }
         }
@@ -57,15 +90,14 @@ namespace KuanMi.VolumetricLighting
             }
         }
 
-        [SerializeField]
-        private float intensity = 1;
-        [SerializeField]
-        private float mieK = 0.8f;
-        [SerializeField]
-        private float numSteps = 4;
-        
-        
-        
+        [SerializeField] private Color maxIntensity = Color.white;
+        [SerializeField] private float distanceAttenuation = 1;
+        [SerializeField] private float shadowAttenuation  = 1;
+        [SerializeField] private float mieK = 0.8f;
+        [SerializeField] private float numSteps = 3;
+        [SerializeField] private float evenness = 1;
+
+
         private int _lightIndex = 1;
 
         [HideInInspector] public Mesh mesh;
@@ -81,12 +113,12 @@ namespace KuanMi.VolumetricLighting
 
         protected bool meshNeedUpdate;
         protected bool matNeedUpdate;
-        
+
         protected float lastRange;
-        
+
         public Light Light;
-        
-        
+
+
         protected virtual void OnEnable()
         {
             Light = GetComponent<Light>();
@@ -101,6 +133,7 @@ namespace KuanMi.VolumetricLighting
                 Debug.LogError("Light type is not supported");
                 return;
             }
+
             material = CoreUtils.CreateEngineMaterial(Shader.Find(shaderName));
             GenMesh();
             BaseVolumeLightList.Add(this);
@@ -112,12 +145,11 @@ namespace KuanMi.VolumetricLighting
             DestroyImmediate(material);
             material = null;
         }
-        
+
         protected abstract void GenMesh();
 
         public virtual void UpdateIfNeed()
         {
-            
             if (matNeedUpdate)
                 UpdateMaterial();
             CheckIfMeshNeedUpdate();
@@ -133,15 +165,15 @@ namespace KuanMi.VolumetricLighting
         {
             material.SetFloat(SpotAngleID, Light.spotAngle);
             material.SetFloat(RangeID, Light.range);
-            material.SetFloat(IntensityID, Intensity);
+            material.SetColor(MaxIntensityID, MaxIntensity);
             material.SetFloat(MieKID, MieK);
             material.SetInt(LightIndexID, LightIndex);
             material.SetFloat(NumStepsID, NumSteps);
+            material.SetVector(Para01ID, new Vector4(Evenness, distanceAttenuation, shadowAttenuation, 0));
 
             matNeedUpdate = false;
         }
 
         public abstract bool LightTypeIsSupported();
-
     }
 }

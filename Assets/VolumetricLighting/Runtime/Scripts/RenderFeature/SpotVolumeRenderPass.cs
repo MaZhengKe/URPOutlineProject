@@ -35,7 +35,7 @@ namespace KuanMi.VolumetricLighting
                         }
                     }
                     
-                    if(lightIndex == -1 || volumeLight.Intensity <= float.Epsilon) continue;
+                    if(lightIndex == -1 || volumeLight.MaxIntensity == Color.black) continue;
 
                     volumeLight.LightIndex = lightIndex;
                     volumeLight.UpdateIfNeed();
