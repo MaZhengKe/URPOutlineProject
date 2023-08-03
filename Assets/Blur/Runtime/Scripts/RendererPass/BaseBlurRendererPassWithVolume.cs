@@ -57,6 +57,7 @@ namespace KuanMi.Blur
                 if (isMask)
                 {
                     m_BlendMaterial.SetFloat("_Spread", maskBlur.areaSmooth.value);
+                    m_BlendMaterial.SetColor("_MaskColor",maskBlur.maskColor.value);
                     if (maskBlur.maskType.value == MaskBlur.MaskType.Circle)
                     {
                         m_BlendMaterial.EnableKeyword("_CIRCLE");

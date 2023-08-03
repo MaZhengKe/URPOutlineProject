@@ -10,9 +10,11 @@ namespace Blur.Editor
     public class MaskBlurEditor : VolumeComponentEditor
     {
         SerializedDataParameter m_isMask;
+        SerializedDataParameter m_areaSmooth;
+        SerializedDataParameter m_maskColor;
+        
         SerializedDataParameter m_maskType;
         SerializedDataParameter m_areaSize;
-        SerializedDataParameter m_areaSmooth;
         SerializedDataParameter m_offset;
         
         SerializedDataParameter m_center;
@@ -24,6 +26,8 @@ namespace Blur.Editor
             var o = new PropertyFetcher<MaskBlur>(serializedObject);
             m_isMask = Unpack(o.Find(x => x.isMask));
             m_maskType = Unpack(o.Find(x => x.maskType));
+            m_maskColor = Unpack(o.Find(x => x.maskColor));
+            
             m_areaSize = Unpack(o.Find(x => x.areaSize));
             m_areaSmooth = Unpack(o.Find(x => x.areaSmooth));
             m_offset = Unpack(o.Find(x => x.offset));
@@ -36,6 +40,7 @@ namespace Blur.Editor
         {
             PropertyField(m_isMask);
             PropertyField(m_maskType);
+            PropertyField(m_maskColor);
             
             if(m_maskType.value.intValue == (int)MaskBlur.MaskType.Rectangle)
             {

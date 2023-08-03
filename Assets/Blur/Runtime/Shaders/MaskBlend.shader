@@ -29,6 +29,7 @@
             CBUFFER_START(UnityPerMaterial)
                 float _Area;
                 float _Spread;
+                float3 _MaskColor;
 
                 #ifdef _CIRCLE
                 float2 _Center;
@@ -52,6 +53,8 @@
             {
                 float mask = saturate(Mask(IN.uv));
                 half4 bokeh = SAMPLE_TEXTURE2D(_BlitTexture, sampler_BlitTexture, IN.uv);
+
+                bokeh.rgb *= _MaskColor * mask  ; 
 
                 return float4(bokeh.rgb, mask);
             }
