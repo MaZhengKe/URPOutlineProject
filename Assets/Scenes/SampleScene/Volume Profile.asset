@@ -14,14 +14,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   BlurRadius:
-    m_OverrideState: 1
-    m_Value: 1.14
+    m_OverrideState: 0
+    m_Value: 2.36
   Iteration:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 2
   DownSample:
     m_OverrideState: 1
     m_Value: 1
+--- !u!114 &-6466418328916409190
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0f70f52b96643b6b8d73838b91dfe29, type: 3}
+  m_Name: BokehBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  BlurRadius:
+    m_OverrideState: 1
+    m_Value: 1.55
+  Iteration:
+    m_OverrideState: 1
+    m_Value: 10
+  DownSample:
+    m_OverrideState: 1
+    m_Value: 1
+  Iteration2:
+    m_OverrideState: 1
+    m_Value: 128
 --- !u!114 &-2301025411271155102
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -62,6 +87,7 @@ MonoBehaviour:
   - {fileID: 2499473457418846229}
   - {fileID: 6149648845761051688}
   - {fileID: -7939871064371296884}
+  - {fileID: -6466418328916409190}
 --- !u!114 &2499473457418846229
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -76,11 +102,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   BlurRadius:
-    m_OverrideState: 0
-    m_Value: 4
+    m_OverrideState: 1
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 1
   DownSample:
     m_OverrideState: 1
     m_Value: 1
