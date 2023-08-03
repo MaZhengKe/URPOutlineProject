@@ -1,5 +1,27 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7939871064371296884
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f2f70d80247418f8ea73ffa73a36036, type: 3}
+  m_Name: DualBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  BlurRadius:
+    m_OverrideState: 1
+    m_Value: 1.14
+  Iteration:
+    m_OverrideState: 1
+    m_Value: 4
+  DownSample:
+    m_OverrideState: 1
+    m_Value: 1
 --- !u!114 &-2301025411271155102
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -39,6 +61,7 @@ MonoBehaviour:
   - {fileID: -2301025411271155102}
   - {fileID: 2499473457418846229}
   - {fileID: 6149648845761051688}
+  - {fileID: -7939871064371296884}
 --- !u!114 &2499473457418846229
 MonoBehaviour:
   m_ObjectHideFlags: 3

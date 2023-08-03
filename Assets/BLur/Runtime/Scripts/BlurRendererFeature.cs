@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using BLur.Runtime.Volume;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -12,6 +13,7 @@ namespace BLur.Runtime
         
         private GaussianBlurRendererPass _mGaussianBlurRendererPass;
         private KawaseBlurRenderPass m_KawaseBlurRenderPass;
+        private DualBlurRenderPass m_DualBlurRenderPass;
 
         private Material m_Material;
         
@@ -20,6 +22,7 @@ namespace BLur.Runtime
         {
             GaussianBlur,
             KawaseBlur,
+            DualBlur,
         }
 
         public override void Create()
@@ -30,6 +33,11 @@ namespace BLur.Runtime
             };
             
             m_KawaseBlurRenderPass = new KawaseBlurRenderPass()
+            {
+                renderPassEvent = renderPassEvent
+            };
+            
+            m_DualBlurRenderPass = new DualBlurRenderPass()
             {
                 renderPassEvent = renderPassEvent
             };
@@ -58,6 +66,12 @@ namespace BLur.Runtime
             if (shouldAdd2)
             {
                 renderer.EnqueuePass(m_KawaseBlurRenderPass);
+            }
+            
+            bool shouldAdd3 = m_DualBlurRenderPass.Setup(renderer, m_Material);
+            if (shouldAdd3)
+            {
+                renderer.EnqueuePass(m_DualBlurRenderPass);
             }
         }
         
