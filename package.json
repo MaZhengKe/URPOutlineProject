@@ -1,0 +1,11 @@
+{
+  "name": "top.kuanmi.blur",
+  "author": "KuanMi",
+  "displayName": "Blur",
+  "version": "1.0.0",
+  "unity": "2022.1",
+  "description": "Blur for URP",
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "13.1.8"
+  }
+}
