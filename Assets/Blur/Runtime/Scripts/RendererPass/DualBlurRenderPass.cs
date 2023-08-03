@@ -2,14 +2,13 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public class DualBlurRenderPass : BaseBlurRendererPassWithVolume<DualBlur>
     {
-        protected override ProfilingSampler GetProfilingSampler()
-        {
-            return ProfilingSampler.Get(BlurRendererFeature.ProfileId.DualBlur);
-        }
+        protected override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.DualBlur;
+        
+        protected override string ShaderName => "KuanMi/DualBlur";
 
         RTHandle[] m_Down;
         RTHandle[] m_Up;
@@ -46,14 +45,14 @@ namespace KuanMi.Blur.Runtime
             m_Material.SetFloat(BlurRadius, blurRadius);
 
             Blitter.BlitCameraTexture(cmd, m_Renderer.cameraColorTargetHandle, m_Down[0],
-                RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, m_Material, 3);
+                RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, m_Material, 1);
 
             var lastDown = m_Down[0];
 
             for (int i = 1; i < iteration; i++)
             {
                 Blitter.BlitCameraTexture(cmd, lastDown, m_Down[i], RenderBufferLoadAction.DontCare,
-                    RenderBufferStoreAction.Store, m_Material, 3);
+                    RenderBufferStoreAction.Store, m_Material, 1);
                 lastDown = m_Down[i];
             }
 
@@ -61,17 +60,18 @@ namespace KuanMi.Blur.Runtime
             for (int i = iteration - 2; i >= 0; i--)
             {
                 Blitter.BlitCameraTexture(cmd, lastUp, m_Up[i], RenderBufferLoadAction.DontCare,
-                    RenderBufferStoreAction.Store, m_Material, 2);
+                    RenderBufferStoreAction.Store, m_Material, 0);
                 lastUp = m_Up[i];
             }
 
             // Blit(cmd, lastUp, m_Renderer.cameraColorTargetHandle);
             Blitter.BlitCameraTexture(cmd, lastUp, m_Renderer.cameraColorTargetHandle, RenderBufferLoadAction.DontCare,
-                RenderBufferStoreAction.Store, m_Material, 2);
+                RenderBufferStoreAction.Store, m_Material, 0);
         }
 
         public override void Dispose()
         {
+            base.Dispose();
             foreach (var rtHandle in m_Down)
             {
                 rtHandle?.Release();

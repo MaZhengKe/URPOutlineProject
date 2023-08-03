@@ -1,6 +1,6 @@
 ﻿using UnityEngine.Rendering;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public abstract class BaseBlur: VolumeComponent, IPostProcessComponent
     {

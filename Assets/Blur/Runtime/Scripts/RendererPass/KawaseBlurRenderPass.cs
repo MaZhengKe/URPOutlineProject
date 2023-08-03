@@ -2,14 +2,13 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public class KawaseBlurRenderPass : BaseBlurRendererPassWithVolume<KawaseBlur>
     {
-        protected override ProfilingSampler GetProfilingSampler()
-        {
-            return ProfilingSampler.Get(BlurRendererFeature.ProfileId.KawaseBlur);
-        }
+        protected override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.KawaseBlur;
+
+        protected override string ShaderName => "KuanMi/KawaseBlur";
 
         private RTHandle m_BlurTexture1;
         private RTHandle m_BlurTexture2;
@@ -42,13 +41,13 @@ namespace KuanMi.Blur.Runtime
                 block.SetFloat(BlurRadius, (float)i / blurVolume.DownSample.value + blurRadius);
                 block.SetTexture(BlitTexture, source);
 
-                CoreUtils.DrawFullScreen(cmd, m_Material, target, block, 1);
+                CoreUtils.DrawFullScreen(cmd, m_Material, target, block);
 
                 needSwitch = !needSwitch;
             }
 
             m_Material.SetFloat(BlurRadius, (float)iteration / blurVolume.DownSample.value + blurRadius);
-            Blit(cmd, needSwitch ? m_BlurTexture1 : m_BlurTexture2, m_Renderer.cameraColorTargetHandle, m_Material, 1);
+            Blit(cmd, needSwitch ? m_BlurTexture1 : m_BlurTexture2, m_Renderer.cameraColorTargetHandle, m_Material);
         }
 
 

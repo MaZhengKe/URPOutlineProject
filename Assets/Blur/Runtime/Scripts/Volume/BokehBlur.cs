@@ -1,10 +1,13 @@
 ﻿using UnityEngine.Rendering;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     [VolumeComponentMenu("KuanMi/Blur/BokehBlur")]
     public class BokehBlur : BaseBlur
     {
-        public ClampedIntParameter Iteration2 = new ClampedIntParameter(32, 16, 128);
+        BokehBlur()
+        {
+            Iteration.max = 256;
+        }
     }
 }

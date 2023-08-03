@@ -2,11 +2,15 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public abstract class BaseBlurRendererPass : ScriptableRenderPass
     {
-        protected abstract ProfilingSampler GetProfilingSampler();
+        protected abstract BlurRendererFeature.ProfileId ProfileId { get; }
+        
+        protected abstract string ShaderName { get; }
+
+        protected Shader m_Shader;
 
         protected ScriptableRenderer m_Renderer;
         protected Material m_Material;
@@ -33,13 +37,38 @@ namespace KuanMi.Blur.Runtime
 
         public abstract void ExecuteWithCmd(CommandBuffer cmd, ref RenderingData renderingData);
 
-        public virtual bool Setup(ScriptableRenderer renderer, Material material)
+        public virtual bool Setup(ScriptableRenderer renderer)
         {
-            m_Material = material;
+            if(!GetMaterial())
+                return false;
             m_Renderer = renderer;
             return true;
         }
+        
+        private bool GetMaterial()
+        {
+            if (m_Material != null)
+            {
+                return true;
+            }
 
-        public abstract void Dispose();
+            if (m_Shader == null)
+            {
+                m_Shader = Shader.Find(ShaderName);
+                if (m_Shader == null)
+                {
+                    return false;
+                }
+            }
+
+            m_Material = CoreUtils.CreateEngineMaterial(m_Shader);
+
+            return m_Material != null;
+        }
+
+        public virtual void Dispose()
+        {
+            CoreUtils.Destroy(m_Material);
+        }
     }
 }

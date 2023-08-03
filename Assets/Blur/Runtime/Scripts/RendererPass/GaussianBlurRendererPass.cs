@@ -2,14 +2,13 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public class GaussianBlurRendererPass : BaseBlurRendererPassWithVolume<GaussianBlur>
     {
-        protected override ProfilingSampler GetProfilingSampler()
-        {
-            return ProfilingSampler.Get(BlurRendererFeature.ProfileId.GaussianBlur);
-        }
+        protected override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.GaussianBlur;
+        
+        protected override string ShaderName => "KuanMi/GaussianBlur";
 
 
         private RTHandle m_BlurTexture1;
@@ -54,6 +53,7 @@ namespace KuanMi.Blur.Runtime
 
         public override void Dispose()
         {
+            base.Dispose();
             m_BlurTexture1?.Release();
             m_BlurTexture2?.Release();
         }

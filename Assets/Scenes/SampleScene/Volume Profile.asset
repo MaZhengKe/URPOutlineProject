@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   BlurRadius:
-    m_OverrideState: 0
-    m_Value: 2.36
+    m_OverrideState: 1
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 2
+    m_Value: 4
   DownSample:
     m_OverrideState: 1
     m_Value: 1
@@ -37,16 +37,13 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 1.55
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 2
+    m_Value: 256
   DownSample:
     m_OverrideState: 1
     m_Value: 1
-  Iteration2:
-    m_OverrideState: 1
-    m_Value: 128
 --- !u!114 &-2301025411271155102
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -106,7 +103,7 @@ MonoBehaviour:
     m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 4
   DownSample:
     m_OverrideState: 1
     m_Value: 1
@@ -124,8 +121,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   BlurRadius:
-    m_OverrideState: 0
-    m_Value: 4
+    m_OverrideState: 1
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
     m_Value: 4

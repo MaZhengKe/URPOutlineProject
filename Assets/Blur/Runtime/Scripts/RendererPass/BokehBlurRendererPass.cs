@@ -2,7 +2,7 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public class BokehBlurRendererPass : BaseBlurRendererPassWithVolume<BokehBlur>
     {
@@ -16,10 +16,9 @@ namespace KuanMi.Blur.Runtime
             float s = Mathf.Sin(2.39996323f);
             mGoldenRot.Set(c, s, -s, c);
         }
-        protected override ProfilingSampler GetProfilingSampler()
-        {
-            return ProfilingSampler.Get(BlurRendererFeature.ProfileId.BokehBlur);
-        }
+        protected override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.BokehBlur;
+
+        protected override string ShaderName => "KuanMi/BokehBlur";
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
@@ -37,12 +36,13 @@ namespace KuanMi.Blur.Runtime
             var height = m_BlurTexture.rt.height;
             
             m_Material.SetVector(GoldenRot, mGoldenRot);
-            m_Material.SetVector(Params, new Vector4(blurVolume.Iteration2.value, blurVolume.BlurRadius.value, 1f / width, 1f / height));
-            Blit(cmd,  m_BlurTexture , m_Renderer.cameraColorTargetHandle, m_Material, 4);
+            m_Material.SetVector(Params, new Vector4(blurVolume.Iteration.value, blurVolume.BlurRadius.value, 1f / width, 1f / height));
+            Blit(cmd,  m_BlurTexture , m_Renderer.cameraColorTargetHandle, m_Material);
         }
 
         public override void Dispose()
         {
+            base.Dispose();
             m_BlurTexture?.Release();
         }
     }

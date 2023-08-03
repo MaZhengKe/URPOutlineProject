@@ -2,7 +2,7 @@
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace KuanMi.Blur.Runtime
+namespace KuanMi.Blur
 {
     public abstract class BaseBlurRendererPassWithVolume<K> : BaseBlurRendererPass where K : BaseBlur
     {
@@ -32,7 +32,7 @@ namespace KuanMi.Blur.Runtime
 
             var cmd = CommandBufferPool.Get();
 
-            using (new ProfilingScope(cmd, GetProfilingSampler()))
+            using (new ProfilingScope(cmd, ProfilingSampler.Get(ProfileId)))
             {
                 // Debug.Log("ad" + Time.frameCount);
                 ExecuteWithCmd(cmd, ref renderingData);
@@ -42,13 +42,14 @@ namespace KuanMi.Blur.Runtime
             CommandBufferPool.Release(cmd);
         }
 
-        public override bool Setup(ScriptableRenderer renderer, Material material)
+        public override bool Setup(ScriptableRenderer renderer)
         {
-            if (!base.Setup(renderer, material))
+            if (!base.Setup(renderer))
                 return false;
 
             blurVolume = VolumeManager.instance.stack.GetComponent<K>();
             return blurVolume.IsActive();
         }
     }
+
 }
