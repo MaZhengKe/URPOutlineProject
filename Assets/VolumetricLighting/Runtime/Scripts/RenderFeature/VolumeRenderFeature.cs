@@ -68,7 +68,7 @@ namespace KuanMi.VolumetricLighting
                 return;
             }
 
-            bool shouldAdd = m_DirectionalVolumeRenderPass.Setup(m_Material);
+            bool shouldAdd = m_DirectionalVolumeRenderPass.Setup(renderer, m_Material);
             if (shouldAdd)
             {
                 renderer.EnqueuePass(m_DirectionalVolumeRenderPass);

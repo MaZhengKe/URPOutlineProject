@@ -37,7 +37,7 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 3.04
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
     m_Value: 256
@@ -59,13 +59,19 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 2.56
   mieK:
     m_OverrideState: 1
     m_Value: 0.8
   numSteps:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 3
+  BlurRadius:
+    m_OverrideState: 1
+    m_Value: 3.44
+  Iteration:
+    m_OverrideState: 1
+    m_Value: 6
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
