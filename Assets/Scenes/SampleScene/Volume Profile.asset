@@ -37,13 +37,13 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 0.0349
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
     m_Value: 10
   DownSample:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 6
   RadialCenter:
     m_OverrideState: 1
     m_Value: {x: 0.43, y: 0.49}

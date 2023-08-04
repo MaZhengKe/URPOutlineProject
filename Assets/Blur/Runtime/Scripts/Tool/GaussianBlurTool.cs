@@ -28,7 +28,13 @@ namespace KuanMi.Blur
             base.UpdateTool(width, height);
 
             blurRadius = blurVolume.BlurRadius.value;
+
+            Debug.Log(blurRadius);
             iteration = blurVolume.Iteration.value;
+
+
+            blurRadius = 3;
+            iteration = 5;
 
             this.width = width;
             this.height = height;

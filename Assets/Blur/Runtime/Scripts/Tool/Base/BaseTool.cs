@@ -24,16 +24,22 @@ namespace KuanMi.Blur
         
         protected ScriptableRenderPass _renderPass;
         
-        protected K blurVolume;
+        public K blurVolume;
 
         public virtual void UpdateTool(float width, float height)
         {
-            blurVolume = VolumeManager.instance.stack.GetComponent<K>();
+            if (blurVolume == null)
+            {
+                Debug.Log(blurVolume);
+                blurVolume = VolumeManager.instance.stack.GetComponent<K>();
+            }
         }
         
-        public BaseTool(ScriptableRenderPass renderPass)
+        public BaseTool(ScriptableRenderPass renderPass, K blurVolume = null)
         {
             _renderPass = renderPass;
+            if(blurVolume!=null)
+                this.blurVolume = blurVolume;
             
             m_Material = CoreUtils.CreateEngineMaterial(Shader.Find(ShaderName));
         }

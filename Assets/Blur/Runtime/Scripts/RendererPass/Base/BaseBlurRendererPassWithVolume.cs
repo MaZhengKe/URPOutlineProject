@@ -12,8 +12,11 @@ namespace KuanMi.Blur
 
         protected bool isMask => maskBlur.isMask.value;
 
+        public bool renderToTexture;
+        public string TargetTextureName;
 
         protected RTHandle m_MaskTexture;
+        protected RTHandle m_TargetTexture;
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
@@ -30,6 +33,12 @@ namespace KuanMi.Blur
             {
                 RenderingUtils.ReAllocateIfNeeded(ref m_MaskTexture, descriptor, FilterMode.Bilinear,
                     TextureWrapMode.Clamp, name: "_MaskTex");
+            }
+
+            if (renderToTexture)
+            {
+                RenderingUtils.ReAllocateIfNeeded(ref m_TargetTexture, descriptor, FilterMode.Bilinear,
+                    TextureWrapMode.Clamp, name: TargetTextureName);
             }
         }
 
@@ -57,7 +66,7 @@ namespace KuanMi.Blur
                 if (isMask)
                 {
                     m_BlendMaterial.SetFloat("_Spread", maskBlur.areaSmooth.value);
-                    m_BlendMaterial.SetColor("_MaskColor",maskBlur.maskColor.value);
+                    m_BlendMaterial.SetColor("_MaskColor", maskBlur.maskColor.value);
                     if (maskBlur.maskType.value == MaskBlur.MaskType.Circle)
                     {
                         m_BlendMaterial.EnableKeyword("_CIRCLE");
@@ -71,8 +80,19 @@ namespace KuanMi.Blur
                         m_BlendMaterial.SetFloat("_Offset", maskBlur.offset.value);
                     }
 
-                    Blit(cmd, m_MaskTexture, m_Renderer.cameraColorTargetHandle, m_BlendMaterial);
+
+                    if (renderToTexture)
+                    {
+                        
+                        Blit(cmd, m_MaskTexture, m_TargetTexture, m_BlendMaterial);
+                    }
+                    else
+
+                        Blit(cmd, m_MaskTexture, m_Renderer.cameraColorTargetHandle, m_BlendMaterial);
                 }
+                
+                cmd.SetGlobalTexture(TargetTextureName, m_TargetTexture);
+                CoreUtils.SetRenderTarget(cmd, m_Renderer.cameraColorTargetHandle);
             }
 
             context.ExecuteCommandBuffer(cmd);

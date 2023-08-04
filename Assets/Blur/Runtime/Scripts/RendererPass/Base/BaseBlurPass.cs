@@ -4,9 +4,10 @@ using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public abstract class BaseBlurPass<T, K> : BaseBlurRendererPassWithVolume<K> where T : BaseTool<K> where K : BaseBlur
+    public abstract class BaseBlurPass<T, K> : BaseBlurRendererPassWithVolume<K>
+        where T : BaseTool<K> where K : BaseBlur
     {
-        protected T tool;
+        public T tool;
         protected override BlurRendererFeature.ProfileId ProfileId => tool.ProfileId;
 
 
@@ -32,12 +33,15 @@ namespace KuanMi.Blur
         {
             UpdateTool();
             tool.Execute(cmd, m_Renderer.cameraColorTargetHandle,
-                isMask ? m_MaskTexture : m_Renderer.cameraColorTargetHandle);
+                isMask ? m_MaskTexture :  renderToTexture? m_TargetTexture: m_Renderer.cameraColorTargetHandle);
         }
 
         public virtual void UpdateTool()
         {
-            tool.UpdateTool(m_Renderer.cameraColorTargetHandle.rt.width, m_Renderer.cameraColorTargetHandle.rt.height);
+            if (m_Renderer != null && m_Renderer.cameraColorTargetHandle != null &&
+                m_Renderer.cameraColorTargetHandle.rt != null)
+                tool.UpdateTool(m_Renderer.cameraColorTargetHandle.rt.width,
+                    m_Renderer.cameraColorTargetHandle.rt.height);
         }
     }
 }

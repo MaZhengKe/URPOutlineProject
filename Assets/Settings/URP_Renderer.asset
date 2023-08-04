@@ -17,6 +17,22 @@ MonoBehaviour:
   defaultMesh: {fileID: 6644018162127945665, guid: b1a7bae58e0e5c64788880fcb71427a2, type: 3}
   blueNoise: {fileID: 18700000, guid: 176f139e0310d1145b9395185ec5e8da, type: 3}
   m_Shader: {fileID: 4800000, guid: d0d30405e4c3f5c45b3b20f7f76f52fd, type: 3}
+--- !u!114 &-124101717157048921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5a5234608704e269b645ce422867ae1, type: 3}
+  m_Name: RenderBlurTexture
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  gaussianBlur: {fileID: 11400000, guid: 37296860cab9afe4cb840d8bfe2340b8, type: 2}
+  targetTextureName: _BlurTextureTest
+  renderPassEvent: 450
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -44,7 +60,8 @@ MonoBehaviour:
   - {fileID: 8430804913786909302}
   - {fileID: -4566157581653433108}
   - {fileID: 4092994512869341584}
-  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38
+  - {fileID: -124101717157048921}
+  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -97,7 +114,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   renderPassEvent: 500
-  m_Shader: {fileID: 4800000, guid: 45c41bf1132c4c29a75e12591199921e, type: 3}
 --- !u!114 &8430804913786909302
 MonoBehaviour:
   m_ObjectHideFlags: 0
