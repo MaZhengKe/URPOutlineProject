@@ -77,8 +77,6 @@ namespace KuanMi.Blur
             {
                 renderer.EnqueuePass(m_BokehBlurRendererPass);
             }
-            
-            
         }
 
         protected override void Dispose(bool disposing)

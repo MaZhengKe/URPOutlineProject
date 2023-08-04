@@ -12,14 +12,12 @@ struct DefaultVaryings
 TEXTURE2D(_BlitTexture);
 SAMPLER(sampler_BlitTexture);
 
-
 CBUFFER_START(BlurCommon)
 float4 _BlitTexture_ST;
 float4 _BlitTexture_TexelSize;
 
 float _Offset;
 half4 _BlurOffset;
-
 CBUFFER_END
 
 DefaultVaryings defaultVert(DefaultAttributes IN)

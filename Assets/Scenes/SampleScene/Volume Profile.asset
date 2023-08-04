@@ -37,7 +37,7 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 3.04
   Iteration:
     m_OverrideState: 1
     m_Value: 256
@@ -101,7 +101,7 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 10
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
     m_Value: 10
@@ -127,15 +127,18 @@ MonoBehaviour:
   maskType:
     m_OverrideState: 1
     m_Value: 0
-  areaSize:
-    m_OverrideState: 1
-    m_Value: 1.36
   areaSmooth:
     m_OverrideState: 1
-    m_Value: 20
+    m_Value: 11.75
+  maskColor:
+    m_OverrideState: 0
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
+  areaSize:
+    m_OverrideState: 1
+    m_Value: 4.88
   offset:
     m_OverrideState: 1
-    m_Value: 0.023
+    m_Value: 0.062
   center:
     m_OverrideState: 1
     m_Value: {x: -0.36, y: 0.04}
