@@ -19,6 +19,8 @@ namespace KuanMi.Blur
         internal static readonly int GoldenRot = Shader.PropertyToID("_GoldenRot");
         internal static readonly int Params = Shader.PropertyToID("_Params");
         internal static readonly int IterationID = Shader.PropertyToID("_Iteration");
+        internal static readonly int BlueNoiseID = Shader.PropertyToID("_BlueNoise");
+        internal static readonly int TimeSpeedID = Shader.PropertyToID("_TimeSpeed");
         
         protected ScriptableRenderPass _renderPass;
         
