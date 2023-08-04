@@ -19,6 +19,7 @@ float _Iteration;
 float _Offset;
 float _TimeSpeed;
 half4 _BlurOffset;
+half2 _RadialCenter;
 CBUFFER_END
 
 DefaultVaryings defaultVert(DefaultAttributes IN)

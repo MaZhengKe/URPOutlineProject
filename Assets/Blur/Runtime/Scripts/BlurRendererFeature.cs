@@ -15,6 +15,7 @@ namespace KuanMi.Blur
         private DualBlurRenderPass m_DualBlurRenderPass;
         private BokehBlurRendererPass m_BokehBlurRendererPass;
         private GrainyBlurRendererPass m_GrainyBlurRendererPass;
+        private RadialBlurRenderPass m_RadialBlurRenderPass;
         
         protected List<BaseBlurRendererPass> rendererPasses = new();
 
@@ -25,7 +26,8 @@ namespace KuanMi.Blur
             KawaseBlur,
             DualBlur,
             BokehBlur,
-            GrainyBlur
+            GrainyBlur,
+            RadialBlur
         }
 
         public override void Create()
@@ -54,6 +56,11 @@ namespace KuanMi.Blur
             });
             
             rendererPasses.Add(m_GrainyBlurRendererPass = new GrainyBlurRendererPass()
+            {
+                renderPassEvent = renderPassEvent
+            });
+            
+            rendererPasses.Add(m_RadialBlurRenderPass = new RadialBlurRenderPass()
             {
                 renderPassEvent = renderPassEvent
             });
@@ -88,6 +95,11 @@ namespace KuanMi.Blur
             if (m_GrainyBlurRendererPass.Setup(renderer))
             {
                 renderer.EnqueuePass(m_GrainyBlurRendererPass);
+            }
+            
+            if (m_RadialBlurRenderPass.Setup(renderer))
+            {
+                renderer.EnqueuePass(m_RadialBlurRenderPass);
             }
         }
 

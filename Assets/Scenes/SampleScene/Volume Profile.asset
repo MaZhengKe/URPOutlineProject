@@ -22,6 +22,31 @@ MonoBehaviour:
   DownSample:
     m_OverrideState: 1
     m_Value: 1
+--- !u!114 &-7925944137140911734
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25966cdf25ba4075b59ea89f9fc187b1, type: 3}
+  m_Name: RadialBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  BlurRadius:
+    m_OverrideState: 1
+    m_Value: 0.0349
+  Iteration:
+    m_OverrideState: 1
+    m_Value: 10
+  DownSample:
+    m_OverrideState: 1
+    m_Value: 1
+  RadialCenter:
+    m_OverrideState: 1
+    m_Value: {x: 0.43, y: 0.49}
 --- !u!114 &-7832301645318173622
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -37,14 +62,17 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 0.012
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 4
   DownSample:
     m_OverrideState: 1
     m_Value: 1
   blueNoise:
+    m_OverrideState: 1
+    m_Value: 1
+  TimeSpeed:
     m_OverrideState: 1
     m_Value: 0
 --- !u!114 &-6466418328916409190
@@ -117,6 +145,8 @@ MonoBehaviour:
   - {fileID: -7939871064371296884}
   - {fileID: -6466418328916409190}
   - {fileID: -7832301645318173622}
+  - {fileID: 7273086681497384362}
+  - {fileID: -7925944137140911734}
 --- !u!114 &2499473457418846229
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -176,7 +206,7 @@ MonoBehaviour:
   active: 1
   mode:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 2
   neutralHDRRangeReductionMode:
     m_OverrideState: 1
     m_Value: 2
@@ -201,3 +231,40 @@ MonoBehaviour:
   maxNits:
     m_OverrideState: 1
     m_Value: 1000
+--- !u!114 &7273086681497384362
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ca642bde7d16384a81f23b78f63bad7, type: 3}
+  m_Name: MaskBlur
+  m_EditorClassIdentifier: 
+  active: 1
+  isMask:
+    m_OverrideState: 0
+    m_Value: 0
+  maskType:
+    m_OverrideState: 0
+    m_Value: 0
+  areaSmooth:
+    m_OverrideState: 0
+    m_Value: 1
+  maskColor:
+    m_OverrideState: 0
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
+  areaSize:
+    m_OverrideState: 0
+    m_Value: 1
+  offset:
+    m_OverrideState: 0
+    m_Value: 0
+  center:
+    m_OverrideState: 0
+    m_Value: {x: 0, y: 0}
+  radius:
+    m_OverrideState: 0
+    m_Value: 0.5
