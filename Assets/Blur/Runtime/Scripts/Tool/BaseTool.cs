@@ -7,8 +7,12 @@ namespace KuanMi.Blur
     public abstract class BaseTool
     {
         public abstract string ShaderName { get; }
-        public Material Material { get; protected set; }
+        public Material m_Material { get; protected set; }
         
+        protected static readonly int BlurRadius = Shader.PropertyToID("_Offset");
+        protected static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
+        protected static readonly int BlurOffset = Shader.PropertyToID("_BlurOffset");
+        protected static readonly int BlitTextureSt = Shader.PropertyToID("_BlitTexture_ST");
         internal static readonly int GoldenRot = Shader.PropertyToID("_GoldenRot");
         internal static readonly int Params = Shader.PropertyToID("_Params");
         
@@ -18,14 +22,19 @@ namespace KuanMi.Blur
         {
             _renderPass = renderPass;
             
-            Material = CoreUtils.CreateEngineMaterial(Shader.Find(ShaderName));
+            m_Material = CoreUtils.CreateEngineMaterial(Shader.Find(ShaderName));
         }
         public abstract void OnCameraSetup(RenderTextureDescriptor descriptor);
         public abstract void Execute(CommandBuffer cmd, RTHandle source, RTHandle target);
         
         public virtual void Dispose()
         {
-            CoreUtils.Destroy(Material);
+            CoreUtils.Destroy(m_Material);
+        }
+        
+        protected void Blit(CommandBuffer cmd, RTHandle source, RTHandle target)
+        {
+            _renderPass.Blit(cmd, source, target);
         }
     }
 }

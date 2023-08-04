@@ -34,9 +34,9 @@ namespace KuanMi.Blur
             var width = m_BlurTexture.rt.width;
             var height = m_BlurTexture.rt.height;
 
-            Material.SetVector(GoldenRot, mGoldenRot);
-            Material.SetVector(Params, new Vector4(Iteration, BlurRadius, 1f / width, 1f / height));
-            _renderPass.Blit(cmd, m_BlurTexture, target, Material);
+            m_Material.SetVector(GoldenRot, mGoldenRot);
+            m_Material.SetVector(Params, new Vector4(Iteration, BlurRadius, 1f / width, 1f / height));
+            _renderPass.Blit(cmd, m_BlurTexture, target, m_Material);
         }
 
         public override void Dispose()
