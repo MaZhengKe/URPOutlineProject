@@ -4,8 +4,11 @@ using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public abstract class BaseTool
+    public abstract class BaseTool<K> where K : BaseBlur
     {
+        
+        public abstract BlurRendererFeature.ProfileId ProfileId { get; }
+        
         public abstract string ShaderName { get; }
         public Material m_Material { get; protected set; }
         
@@ -17,6 +20,13 @@ namespace KuanMi.Blur
         internal static readonly int Params = Shader.PropertyToID("_Params");
         
         protected ScriptableRenderPass _renderPass;
+        
+        protected K blurVolume;
+
+        public virtual void UpdateTool(float width, float height)
+        {
+            blurVolume = VolumeManager.instance.stack.GetComponent<K>();
+        }
         
         public BaseTool(ScriptableRenderPass renderPass)
         {
@@ -35,6 +45,10 @@ namespace KuanMi.Blur
         protected void Blit(CommandBuffer cmd, RTHandle source, RTHandle target)
         {
             _renderPass.Blit(cmd, source, target);
+        }
+        protected void Blit(CommandBuffer cmd, RTHandle source, RTHandle target,Material material)
+        {
+            _renderPass.Blit(cmd, source, target,material);
         }
     }
 }

@@ -4,6 +4,7 @@ using UnityEngine.Rendering;
 
 namespace KuanMi.Blur
 {
+    [VolumeComponentMenu("KuanMi/Blur/Blur Mask")]
     public class MaskBlur : VolumeComponent, IPostProcessComponent
     {
         public enum MaskType
@@ -11,7 +12,7 @@ namespace KuanMi.Blur
             Rectangle,
             Circle,
         }
-        
+
         public BoolParameter isMask = new BoolParameter(false);
         public EnumParameter<MaskType> maskType = new EnumParameter<MaskType>(MaskType.Rectangle);
         
@@ -23,12 +24,15 @@ namespace KuanMi.Blur
         
         public Vector2Parameter center = new Vector2Parameter(new Vector2(0f, 0f));
         public ClampedFloatParameter radius = new ClampedFloatParameter(0.5f, 0, 10);
-        
 
         public bool IsActive()
         {
             return isMask.value;
         }
 
+        public MaskBlur()
+        {
+            displayName = "Blur Mask";
+        }
     }
 }

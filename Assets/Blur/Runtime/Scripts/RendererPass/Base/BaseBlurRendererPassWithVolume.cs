@@ -35,7 +35,7 @@ namespace KuanMi.Blur
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (m_Material == null)
+            if (m_BlendMaterial == null)
             {
                 Debug.LogError("Material is null");
                 return;

@@ -4,8 +4,10 @@ using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public class BokehBlurTool : BaseTool
+    public class BokehBlurTool : BaseTool<BokehBlur>
     {
+        public override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.BokehBlur;
+
         public float Iteration;
         public float BlurRadius;
 
@@ -14,11 +16,18 @@ namespace KuanMi.Blur
 
         public override string ShaderName => "KuanMi/BokehBlur";
 
-        public  BokehBlurTool(ScriptableRenderPass renderPass) : base(renderPass)
+        public BokehBlurTool(ScriptableRenderPass renderPass) : base(renderPass)
         {
             var c = Mathf.Cos(2.39996323f);
             var s = Mathf.Sin(2.39996323f);
             mGoldenRot.Set(c, s, -s, c);
+        }
+
+        public override void UpdateTool(float width, float height)
+        {
+            base.UpdateTool(width, height);
+            Iteration = blurVolume.Iteration.value;
+            BlurRadius = blurVolume.BlurRadius.value;
         }
 
         public override void OnCameraSetup(RenderTextureDescriptor descriptor)

@@ -4,9 +4,11 @@ using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public abstract class BaseBlurPass<T, K> : BaseBlurRendererPassWithVolume<K> where T : BaseTool where K : BaseBlur
+    public abstract class BaseBlurPass<T, K> : BaseBlurRendererPassWithVolume<K> where T : BaseTool<K> where K : BaseBlur
     {
         protected T tool;
+        protected override BlurRendererFeature.ProfileId ProfileId => tool.ProfileId;
+
 
         public BaseBlurPass()
         {
@@ -16,6 +18,7 @@ namespace KuanMi.Blur
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             base.OnCameraSetup(cmd, ref renderingData);
+            UpdateTool();
             tool.OnCameraSetup(descriptor);
         }
 
@@ -34,6 +37,7 @@ namespace KuanMi.Blur
 
         public virtual void UpdateTool()
         {
+            tool.UpdateTool(m_Renderer.cameraColorTargetHandle.rt.width, m_Renderer.cameraColorTargetHandle.rt.height);
         }
     }
 }

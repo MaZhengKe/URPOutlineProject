@@ -8,13 +8,10 @@ namespace KuanMi.Blur
     {
         protected abstract BlurRendererFeature.ProfileId ProfileId { get; }
         
-        protected abstract string ShaderName { get; }
         protected string MaskBlendShaderName = "KuanMi/MaskBlend";
 
-        protected Shader m_Shader;
-
         protected ScriptableRenderer m_Renderer;
-        protected Material m_Material;
+        
         protected Material m_BlendMaterial;
 
         protected RenderTextureDescriptor descriptor;
@@ -49,29 +46,20 @@ namespace KuanMi.Blur
         
         private bool GetMaterial()
         {
-            if (m_Material != null)
+            if (m_BlendMaterial != null)
             {
                 return true;
             }
+            
 
-            if (m_Shader == null)
-            {
-                m_Shader = Shader.Find(ShaderName);
-                if (m_Shader == null)
-                {
-                    return false;
-                }
-            }
-
-            m_Material = CoreUtils.CreateEngineMaterial(m_Shader);
             m_BlendMaterial = CoreUtils.CreateEngineMaterial(Shader.Find(MaskBlendShaderName));
 
-            return m_Material != null;
+            return m_BlendMaterial != null;
         }
 
         public virtual void Dispose()
         {
-            CoreUtils.Destroy(m_Material);
+            CoreUtils.Destroy(m_BlendMaterial);
         }
     }
 }

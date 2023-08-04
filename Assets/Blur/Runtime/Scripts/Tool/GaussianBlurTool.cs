@@ -4,8 +4,11 @@ using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public class GaussianBlurTool : BaseTool
+    public class GaussianBlurTool : BaseTool<GaussianBlur>
     {
+        public override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.GaussianBlur;
+
+
         private RTHandle m_BlurTexture1;
         private RTHandle m_BlurTexture2;
 
@@ -14,12 +17,25 @@ namespace KuanMi.Blur
 
         public float width;
         public float height;
-        
+
         public GaussianBlurTool(ScriptableRenderPass renderPass) : base(renderPass)
         {
         }
 
+
+        public override void UpdateTool(float width, float height)
+        {
+            base.UpdateTool(width, height);
+
+            blurRadius = blurVolume.BlurRadius.value;
+            iteration = blurVolume.Iteration.value;
+
+            this.width = width;
+            this.height = height;
+        }
+
         public override string ShaderName => "KuanMi/GaussianBlur";
+
         public override void OnCameraSetup(RenderTextureDescriptor descriptor)
         {
             RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture1, descriptor, FilterMode.Bilinear,
@@ -51,7 +67,7 @@ namespace KuanMi.Blur
         public override void Dispose()
         {
             base.Dispose();
-            
+
             m_BlurTexture1?.Release();
             m_BlurTexture2?.Release();
         }
