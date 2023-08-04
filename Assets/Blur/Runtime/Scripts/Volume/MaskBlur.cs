@@ -29,10 +29,5 @@ namespace KuanMi.Blur
         {
             return isMask.value;
         }
-
-        public MaskBlur()
-        {
-            displayName = "Blur Mask";
-        }
     }
 }

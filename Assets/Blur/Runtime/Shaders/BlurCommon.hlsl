@@ -15,7 +15,7 @@ SAMPLER(sampler_BlitTexture);
 CBUFFER_START(BlurCommon)
 float4 _BlitTexture_ST;
 float4 _BlitTexture_TexelSize;
-
+float _Iteration;
 float _Offset;
 half4 _BlurOffset;
 CBUFFER_END

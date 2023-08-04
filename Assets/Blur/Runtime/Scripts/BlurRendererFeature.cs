@@ -23,7 +23,8 @@ namespace KuanMi.Blur
             GaussianBlur,
             KawaseBlur,
             DualBlur,
-            BokehBlur
+            BokehBlur,
+            GrainyBlur
         }
 
         public override void Create()

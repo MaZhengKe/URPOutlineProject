@@ -12,12 +12,13 @@ namespace KuanMi.Blur
         public abstract string ShaderName { get; }
         public Material m_Material { get; protected set; }
         
-        protected static readonly int BlurRadius = Shader.PropertyToID("_Offset");
+        protected static readonly int BlurRadiusID = Shader.PropertyToID("_Offset");
         protected static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
         protected static readonly int BlurOffset = Shader.PropertyToID("_BlurOffset");
         protected static readonly int BlitTextureSt = Shader.PropertyToID("_BlitTexture_ST");
         internal static readonly int GoldenRot = Shader.PropertyToID("_GoldenRot");
         internal static readonly int Params = Shader.PropertyToID("_Params");
+        internal static readonly int IterationID = Shader.PropertyToID("_Iteration");
         
         protected ScriptableRenderPass _renderPass;
         

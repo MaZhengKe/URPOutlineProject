@@ -48,7 +48,7 @@ namespace KuanMi.Blur
         public override void Execute(CommandBuffer cmd, RTHandle source, RTHandle target)
         {
             m_Material.SetVector(BlitTextureSt, new Vector4(1, 1, 0, 0));
-            m_Material.SetFloat(BlurRadius, blurRadius);
+            m_Material.SetFloat(BlurRadiusID, blurRadius);
 
             Blitter.BlitCameraTexture(cmd, source, m_Down[0],
                 RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, m_Material, 1);
