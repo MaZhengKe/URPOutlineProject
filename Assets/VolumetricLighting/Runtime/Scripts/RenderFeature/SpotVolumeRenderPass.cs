@@ -12,11 +12,29 @@ namespace KuanMi.VolumetricLighting
         private readonly ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(VolumeRenderFeature.ProfileId.SpotVolume);
         public Mesh defaultMesh { get; set; }
         public Texture2DArray blueNoise { get; set; }
+        
+        public RTHandle volumetricLightingTexture;
+
+        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
+        {
+            base.OnCameraSetup(cmd, ref renderingData);
+            
+            var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+            var descriptor = cameraTargetDescriptor;
+
+            descriptor = cameraTargetDescriptor;
+            descriptor.depthBufferBits = 0;
+            descriptor.msaaSamples = 1;
+
+            RenderingUtils.ReAllocateIfNeeded(ref volumetricLightingTexture, descriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name: "_VolumeTex");
+        }
 
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             var cmd = CommandBufferPool.Get();
+            CoreUtils.SetRenderTarget(cmd, volumetricLightingTexture, ClearFlag.All);
 
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
@@ -58,6 +76,11 @@ namespace KuanMi.VolumetricLighting
         public void Dispose()
         {
             
+        }
+
+        public void Setup(ScriptableRenderer renderer, Material mMaterial, RTHandle volumetricLightingTexture)
+        {
+            this.volumetricLightingTexture = volumetricLightingTexture;
         }
     }
 }

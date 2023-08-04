@@ -13,7 +13,7 @@ namespace KuanMi.VolumetricLighting
         
         public ClampedIntParameter numSteps = new ClampedIntParameter(16, 1, 32);
         
-        
+        [Header("模糊")]
         public ClampedFloatParameter BlurRadius = new ClampedFloatParameter(0f, 0f, 10f);
         public ClampedIntParameter Iteration = new ClampedIntParameter(0, 0, 10);
 

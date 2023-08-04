@@ -24,7 +24,7 @@ namespace KuanMi.VolumetricLighting
 
         public RTHandle volumetricLightingTexture;
         public RTHandle blurVolumetricLightingTexture;
-        
+
         public string BlitShaderName = "KuanMi/Blit";
         public Material BlitMaterial { get; private set; }
 
@@ -66,9 +66,6 @@ namespace KuanMi.VolumetricLighting
             var stack = VolumeManager.instance.stack;
             m_VolumetricLighting = stack.GetComponent<VolumetricLighting>();
 
-            if (!m_VolumetricLighting.IsActive())
-                return;
-
             m_Material.SetFloat(Intensity, m_VolumetricLighting.intensity.value);
             m_Material.SetFloat(MieK, m_VolumetricLighting.mieK.value);
             m_Material.SetFloat(NumSteps, m_VolumetricLighting.numSteps.value);
@@ -79,25 +76,22 @@ namespace KuanMi.VolumetricLighting
 
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
-                CoreUtils.SetRenderTarget(cmd, volumetricLightingTexture, ClearFlag.All, Color.black);
-                CoreUtils.DrawFullScreen(cmd, m_Material);
+                if (m_VolumetricLighting.IsActive())
+                {
+                    CoreUtils.SetRenderTarget(cmd, volumetricLightingTexture);
+                    CoreUtils.DrawFullScreen(cmd, m_Material);
+                }
 
-            
                 blurTool.blurRadius = m_VolumetricLighting.BlurRadius.value;
                 blurTool.iteration = m_VolumetricLighting.Iteration.value;
 
                 blurTool.width = m_Renderer.cameraColorTargetHandle.rt.width;
                 blurTool.height = m_Renderer.cameraColorTargetHandle.rt.height;
-                
-                // blurTool.Iteration = m_VolumetricLighting.Iteration.value;
-                // blurTool.BlurRadius = m_VolumetricLighting.BlurRadius.value;
 
                 blurTool.Execute(cmd, volumetricLightingTexture, blurVolumetricLightingTexture);
 
                 BlitMaterial.SetTexture("_BlitTexture", blurVolumetricLightingTexture);
-                
                 CoreUtils.DrawFullScreen(cmd, BlitMaterial, m_Renderer.cameraColorTargetHandle);
-                
             }
 
             context.ExecuteCommandBuffer(cmd);

@@ -10,6 +10,7 @@ namespace KuanMi.VolumetricLighting
         {
             SpotVolume,
             DirectionalVolume,
+            VolumeBlur
         }
 
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
@@ -43,7 +44,6 @@ namespace KuanMi.VolumetricLighting
                 blueNoise = blueNoise,
                 defaultMesh = defaultMesh,
                 renderPassEvent = renderPassEvent
-                
             };
 
             m_DirectionalVolumeRenderPass = new DirectionalVolumeRenderPass()
@@ -58,7 +58,6 @@ namespace KuanMi.VolumetricLighting
             if(renderingData.cameraData.camera.name == "Preview Scene Camera")
                 return;
 
-            renderer.EnqueuePass(m_SpotVolumeRenderPass);
 
             if (!GetMaterial())
             {
@@ -73,6 +72,8 @@ namespace KuanMi.VolumetricLighting
             {
                 renderer.EnqueuePass(m_DirectionalVolumeRenderPass);
             }
+            m_SpotVolumeRenderPass.Setup(renderer, m_Material,m_DirectionalVolumeRenderPass.volumetricLightingTexture);
+            renderer.EnqueuePass(m_SpotVolumeRenderPass);
         }
 
         protected override void Dispose(bool disposing)
