@@ -29,9 +29,8 @@ namespace KuanMi.Blur
 
             blurRadius = blurVolume.BlurRadius.value;
 
-            Debug.Log(blurRadius);
+            // Debug.Log(blurRadius);
             iteration = blurVolume.Iteration.value;
-
 
             blurRadius = 3;
             iteration = 5;
