@@ -6,7 +6,7 @@ Shader "KuanMi/DirectionalVolumetricLighting"
         _MieK("_MieK",Range(-1.0,1.0)) = 1.0
         _NumSteps("NumSteps",float) = 15
 
-        _BlueNoise("BlueNoise",2DArray) = "white"
+        _BlueNoise("BlueNoise",2D) = "white"
     }
 
     SubShader
@@ -63,7 +63,7 @@ Shader "KuanMi/DirectionalVolumetricLighting"
                 float2 texCoord0 : TEXCOORD0;
             };
 
-            TEXTURE2D_ARRAY(_BlueNoise);
+            TEXTURE2D(_BlueNoise);
             SAMPLER(sampler_BlueNoise);
 
             CBUFFER_START(UnityPerMaterial)
@@ -92,9 +92,7 @@ Shader "KuanMi/DirectionalVolumetricLighting"
 
             float noise(float2 uv)
             {
-                // 0-63
-                int index = random(_Time) * 64;
-                return SAMPLE_TEXTURE2D_ARRAY(_BlueNoise, sampler_BlueNoise, uv, index).r;
+                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise, uv).r;
             }
 
             half4 frag(Varyings IN) : SV_Target

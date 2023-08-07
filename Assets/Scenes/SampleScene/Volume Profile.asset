@@ -112,7 +112,7 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1.24
   mieK:
     m_OverrideState: 1
     m_Value: 0.8
@@ -162,7 +162,7 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 6.56
+    m_Value: 0
   Iteration:
     m_OverrideState: 1
     m_Value: 4
@@ -246,7 +246,7 @@ MonoBehaviour:
   active: 1
   isMask:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   maskType:
     m_OverrideState: 1
     m_Value: 0

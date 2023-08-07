@@ -12,7 +12,7 @@ Shader "KuanMi/SpotVolumetricLighting"
         _lightIndex("lightIndex",int) = 0
         _Para01("Para01",Vector) = (1,0,0,0)
 
-        _BlueNoise("BlueNoise",2DArray) = "white"
+        _BlueNoise("BlueNoise",2D) = "white"
     }
 
     SubShader
@@ -81,7 +81,7 @@ Shader "KuanMi/SpotVolumetricLighting"
                 float4 positionCS : SV_POSITION;
             };
 
-            TEXTURE2D_ARRAY(_BlueNoise);
+            TEXTURE2D(_BlueNoise);
             SAMPLER(sampler_BlueNoise);
 
             CBUFFER_START(UnityPerMaterial)
@@ -108,8 +108,7 @@ Shader "KuanMi/SpotVolumetricLighting"
             
             float noise(float2 uv)
             {
-                int index = random(_Time) * 64;
-                return SAMPLE_TEXTURE2D_ARRAY(_BlueNoise, sampler_BlueNoise, uv, index).r;
+                return SAMPLE_TEXTURE2D(_BlueNoise, sampler_BlueNoise, uv).r;
             }
 
             Light GetAdditionalPerObjectLightForVol(int perObjectLightIndex, float3 positionWS)

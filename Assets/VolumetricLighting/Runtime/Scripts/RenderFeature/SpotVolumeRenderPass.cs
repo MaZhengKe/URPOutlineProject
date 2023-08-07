@@ -11,7 +11,8 @@ namespace KuanMi.VolumetricLighting
         
         private readonly ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(VolumeRenderFeature.ProfileId.SpotVolume);
         public Mesh defaultMesh { get; set; }
-        public Texture2DArray blueNoise { get; set; }
+        public Texture2D[]  blueNoise { get; set; }
+        private int noiseIndex = 0;
         
         public RTHandle volumetricLightingTexture;
 
@@ -62,7 +63,8 @@ namespace KuanMi.VolumetricLighting
                     
                     if (blueNoise != null)
                     {
-                        volumeLight.material.SetTexture(BlueNoise, blueNoise);
+                        noiseIndex = (noiseIndex + 1) % blueNoise.Length;   
+                        volumeLight.material.SetTexture(BlueNoise, blueNoise[noiseIndex]);
                     }
 
                     cmd.DrawMesh(mesh, volumeLight.Matrix, volumeLight.material);

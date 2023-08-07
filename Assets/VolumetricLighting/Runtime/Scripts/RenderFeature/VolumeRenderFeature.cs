@@ -1,4 +1,5 @@
 ﻿using KuanMi.Blur;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -19,13 +20,15 @@ namespace KuanMi.VolumetricLighting
         public Shader GaussianBlurShader;
 
         public Material GaussianBlurMaterial;
-        
+
         public GaussianSetting gaussianBlur;
 
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
 
-        public Mesh defaultMesh;
-        public Texture2DArray blueNoise;
+        [Reload("Meshes/Sphere.fbx")] public Mesh defaultMesh;
+
+        [SerializeField] [HideInInspector] [Reload("Textures/BlueNoise/LDR_LLL1_{0}.png", 0, 63)]
+        public Texture2D[] blueNoise;
 
         private SpotVolumeRenderPass m_SpotVolumeRenderPass;
         private DirectionalVolumeRenderPass m_DirectionalVolumeRenderPass;
@@ -37,14 +40,9 @@ namespace KuanMi.VolumetricLighting
 
         public override void Create()
         {
-            defaultMesh = Resources.Load<Mesh>("KuanMi/Meshes/Sphere");
-            blueNoise = Resources.Load<Texture2DArray>("KuanMi/output");
-
-            // if(defaultMesh == null)
-            //     Debug.LogError("defaultMesh is null");
-            //
-            // if(blueNoise == null)
-            //     Debug.LogError("blueNoise is null");
+#if UNITY_EDITOR
+            ResourceReloader.TryReloadAllNullIn(this, "Assets/VolumetricLighting/Runtime");
+#endif
 
             m_SpotVolumeRenderPass = new SpotVolumeRenderPass()
             {
@@ -76,7 +74,8 @@ namespace KuanMi.VolumetricLighting
                 return;
             }
 
-            bool shouldAdd = m_DirectionalVolumeRenderPass.Setup(renderer, m_Material, GaussianBlurMaterial,gaussianBlur);
+            bool shouldAdd =
+                m_DirectionalVolumeRenderPass.Setup(renderer, m_Material, GaussianBlurMaterial, gaussianBlur);
             if (shouldAdd)
             {
                 renderer.EnqueuePass(m_DirectionalVolumeRenderPass);
@@ -112,7 +111,6 @@ namespace KuanMi.VolumetricLighting
             if (GaussianBlurMaterial == null && GaussianBlurShader != null)
                 GaussianBlurMaterial = CoreUtils.CreateEngineMaterial(GaussianBlurShader);
             return GaussianBlurMaterial != null && m_Material != null;
-
         }
     }
 }

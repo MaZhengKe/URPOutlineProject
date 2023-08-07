@@ -19,7 +19,8 @@ namespace KuanMi.VolumetricLighting
 
         private VolumetricLighting m_VolumetricLighting;
         private Material m_Material;
-        public Texture2DArray blueNoise { get; set; }
+        public Texture2D[]  blueNoise { get; set; }
+        private int noiseIndex = 0;
         public GaussianBlurTool blurTool { get; set; }
 
         public RTHandle volumetricLightingTexture;
@@ -70,7 +71,8 @@ namespace KuanMi.VolumetricLighting
             m_Material.SetFloat(MieK, m_VolumetricLighting.mieK.value);
             m_Material.SetFloat(NumSteps, m_VolumetricLighting.numSteps.value);
 
-            m_Material.SetTexture(BlueNoise, blueNoise);
+            noiseIndex = (noiseIndex + 1) % blueNoise.Length;
+            m_Material.SetTexture(BlueNoise, blueNoise[noiseIndex]);
 
             var cmd = CommandBufferPool.Get();
 
