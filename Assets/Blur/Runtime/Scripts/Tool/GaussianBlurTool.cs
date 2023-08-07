@@ -10,6 +10,9 @@ namespace KuanMi.Blur
 
         private RTHandle m_BlurTexture1;
         private RTHandle m_BlurTexture2;
+        
+        private float width;
+        private float height;
 
         public GaussianBlurTool(ScriptableRenderPass renderPass,GaussianSetting setting) : base(renderPass,setting)
         {
@@ -17,6 +20,8 @@ namespace KuanMi.Blur
 
         public override void OnCameraSetup(RenderTextureDescriptor descriptor)
         {
+            width = descriptor.width;
+            height = descriptor.height;
             RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture1, descriptor, FilterMode.Bilinear,
                 TextureWrapMode.Clamp, name: "_BlurTex1");
             RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture2, descriptor, FilterMode.Bilinear,
@@ -29,13 +34,13 @@ namespace KuanMi.Blur
             for (int i = 0; i < setting.Iteration; i++)
             {
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
-                block.SetVector(BlurOffset, new Vector4(setting.BlurRadius / 1920, 0, 0, 0));
+                block.SetVector(BlurOffset, new Vector4(setting.BlurRadius / width, 0, 0, 0));
                 block.SetTexture(BlitTexture, m_BlurTexture1);
                 CoreUtils.DrawFullScreen(cmd, m_Material, m_BlurTexture2, block, 0);
 
 
                 MaterialPropertyBlock block2 = new MaterialPropertyBlock();
-                block2.SetVector(BlurOffset, new Vector4(0, setting.BlurRadius / 1080, 0, 0));
+                block2.SetVector(BlurOffset, new Vector4(0, setting.BlurRadius / height, 0, 0));
                 block2.SetTexture(BlitTexture, m_BlurTexture2);
                 CoreUtils.DrawFullScreen(cmd, m_Material, m_BlurTexture1, block2, 0);
             }

@@ -162,10 +162,10 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 6.56
   Iteration:
     m_OverrideState: 1
-    m_Value: 10
+    m_Value: 4
   DownSample:
     m_OverrideState: 1
     m_Value: 1
@@ -245,26 +245,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   isMask:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 1
   maskType:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 0
   areaSmooth:
-    m_OverrideState: 0
-    m_Value: 1
+    m_OverrideState: 1
+    m_Value: 15.82
   maskColor:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: {r: 1, g: 1, b: 1, a: 1}
   areaSize:
-    m_OverrideState: 0
-    m_Value: 1
+    m_OverrideState: 1
+    m_Value: 3.09
   offset:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: -0.035
   center:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: {x: 0, y: 0}
   radius:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 0.5

@@ -30,10 +30,8 @@ namespace KuanMi.Blur
             maskBlur = stack.GetComponent<MaskBlur>();
             if(blurSetting != null)
             {
-                
                 descriptor.width /= blurSetting.DownSample;
                 descriptor.height /= blurSetting.DownSample;
-
             }
 
             if (isMask)

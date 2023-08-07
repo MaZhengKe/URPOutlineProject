@@ -22,7 +22,6 @@ namespace KuanMi.VolumetricLighting
         
         public GaussianSetting gaussianBlur;
 
-
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
 
         public Mesh defaultMesh;
@@ -31,12 +30,10 @@ namespace KuanMi.VolumetricLighting
         private SpotVolumeRenderPass m_SpotVolumeRenderPass;
         private DirectionalVolumeRenderPass m_DirectionalVolumeRenderPass;
 
-
         [SerializeField, HideInInspector] private Shader m_Shader;
 
         private const string k_ShaderName = "KuanMi/DirectionalVolumetricLighting";
         private Material m_Material;
-
 
         public override void Create()
         {

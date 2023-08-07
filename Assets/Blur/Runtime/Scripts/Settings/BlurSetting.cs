@@ -8,5 +8,6 @@ namespace Blur.Runtime.Scripts.Settings
         public float BlurRadius = 0;
         public int Iteration = 0;
         public int DownSample = 1;
+        
     }
 }

@@ -13,6 +13,12 @@ MonoBehaviour:
   m_Name: VolumeRenderFeature
   m_EditorClassIdentifier: 
   m_Active: 1
+  GaussianBlurShader: {fileID: 4800000, guid: 720a2b85fb2c22c4da497299eb672a68, type: 3}
+  GaussianBlurMaterial: {fileID: 0}
+  gaussianBlur:
+    BlurRadius: 6.24
+    Iteration: 1
+    DownSample: 1
   renderPassEvent: 500
   defaultMesh: {fileID: 6644018162127945665, guid: b1a7bae58e0e5c64788880fcb71427a2, type: 3}
   blueNoise: {fileID: 18700000, guid: 176f139e0310d1145b9395185ec5e8da, type: 3}
@@ -29,8 +35,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5a5234608704e269b645ce422867ae1, type: 3}
   m_Name: RenderBlurTexture
   m_EditorClassIdentifier: 
-  m_Active: 1
-  gaussianBlur: {fileID: 11400000, guid: 37296860cab9afe4cb840d8bfe2340b8, type: 2}
+  m_Active: 0
+  GaussianBlurShader: {fileID: 4800000, guid: 720a2b85fb2c22c4da497299eb672a68, type: 3}
+  GaussianBlurMaterial: {fileID: 0}
+  gaussianBlur:
+    BlurRadius: 0
+    Iteration: 0
+    DownSample: 1
   targetTextureName: _BlurTextureTest
   renderPassEvent: 450
 --- !u!114 &11400000
@@ -114,6 +125,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   renderPassEvent: 500
+  m_GaussianBlurSettings:
+    Iteration: 1
+    Radius: 1
+    Intensity: 1
+    DownSample: 1
+  blueNoise:
+  - {fileID: 2800000, guid: fa651628d3e7e374e8c95ca63f122b8f, type: 3}
+  - {fileID: 2800000, guid: b1c0e18981e3fed4db08e290e0eca961, type: 3}
+  - {fileID: 2800000, guid: eb7d41cc6d7deab4296ff9db2005971e, type: 3}
+  - {fileID: 2800000, guid: 7363f85ca1c88ef43ac7e763aa07713e, type: 3}
+  - {fileID: 2800000, guid: 32391880a20cf2e4f82ac387438d8210, type: 3}
+  - {fileID: 2800000, guid: 04c20ff13a478314fb3fb3b3a2c23e97, type: 3}
+  - {fileID: 2800000, guid: f6222890b1c56734aa02dd9b1d002140, type: 3}
+  GaussianBlurShader: {fileID: 4800000, guid: 720a2b85fb2c22c4da497299eb672a68, type: 3}
+  KawaseBlurShader: {fileID: 4800000, guid: 3fa0f211e5ddf9043b4516c94432cd6d, type: 3}
+  DualBlurShader: {fileID: 4800000, guid: 6c150174f693ada4887448c15d3b9adb, type: 3}
+  BokehBlurShader: {fileID: 4800000, guid: 3b50af9fc3b4c444b8aa42c4b4effdef, type: 3}
+  GrainyBlurShader: {fileID: 4800000, guid: c392dddcd59c41e6b11dbb7c08f4f2d9, type: 3}
+  RadialBlurShader: {fileID: 4800000, guid: fb10a5f141e145378d76d0aba0f2bc87, type: 3}
+  BlendShader: {fileID: 4800000, guid: dcae65c2e82236b4490be7175d5ba8ef, type: 3}
+  GaussianBlurMaterial: {fileID: 0}
+  KawaseBlurMaterial: {fileID: 0}
+  DualBlurMaterial: {fileID: 0}
+  BokehBlurMaterial: {fileID: 0}
+  GrainyBlurMaterial: {fileID: 0}
+  RadialBlurMaterial: {fileID: 0}
+  BlendMaterial: {fileID: 0}
 --- !u!114 &8430804913786909302
 MonoBehaviour:
   m_ObjectHideFlags: 0

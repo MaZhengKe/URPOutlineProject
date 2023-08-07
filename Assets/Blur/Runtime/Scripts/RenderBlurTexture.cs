@@ -7,20 +7,20 @@ namespace Blur.Runtime
 {
     public class RenderBlurTexture: ScriptableRendererFeature
     {
-        
-        [Reload("Shaders/GaussianBlur.shader")]
-        public Shader GaussianBlurShader;
-        
-        public Material GaussianBlurMaterial;
-        
         public GaussianSetting gaussianBlur;
         public string targetTextureName = "_BlurTexture";
-        
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+
+        [SerializeField] [HideInInspector] [Reload("Shaders/GaussianBlur.shader")]
+        public Shader GaussianBlurShader;
         
+        [SerializeField] [HideInInspector] [Reload("Shaders/MaskBlend.shader")]
+        public Shader BlendShader;
+
+        private Material GaussianBlurMaterial;
+        private Material BlendMaterial;
         private GaussianBlurRendererPass m_GaussianBlurRendererPass;
-        
-        
+
         public override void Create()
         {
 #if UNITY_EDITOR
@@ -33,10 +33,6 @@ namespace Blur.Runtime
                 TargetTextureName = targetTextureName,
                 renderToTexture = true
             };
-
-
-            // Debug.Log(gaussianBlur.BlurRadius.value);
-            
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -53,17 +49,18 @@ namespace Blur.Runtime
                 }
             }
 
-            Debug.Log(GaussianBlurMaterial);
-            m_GaussianBlurRendererPass.Setup(renderer,GaussianBlurMaterial,gaussianBlur,null);
-            renderer.EnqueuePass(m_GaussianBlurRendererPass);
-
+            if(m_GaussianBlurRendererPass.Setup(renderer,GaussianBlurMaterial,gaussianBlur,BlendMaterial))
+                renderer.EnqueuePass(m_GaussianBlurRendererPass);
         }
-        
-        protected bool GetMaterials()
+
+        private bool GetMaterials()
         {
             if (GaussianBlurMaterial == null && GaussianBlurShader != null)
                 GaussianBlurMaterial = CoreUtils.CreateEngineMaterial(GaussianBlurShader);
-            return GaussianBlurMaterial != null;
+            
+            if (BlendMaterial == null && BlendShader != null)
+                BlendMaterial = CoreUtils.CreateEngineMaterial(BlendShader);
+            return GaussianBlurMaterial != null && BlendMaterial != null;
         }
     }
 }

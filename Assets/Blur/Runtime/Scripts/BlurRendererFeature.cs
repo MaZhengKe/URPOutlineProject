@@ -1,88 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    [Serializable]
-    internal class GaussianBlurSettings
-    {
-        [SerializeField] internal int Iteration = 1;
-        [SerializeField] internal float Radius = 1;
-        [SerializeField] internal float Intensity = 1;
-        [SerializeField] internal int DownSample = 1;
-    }
-
     public class BlurRendererFeature : ScriptableRendererFeature
     {
         // Serialized fields
 
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
 
-        [SerializeField] 
-        private GaussianBlurSettings m_GaussianBlurSettings = new GaussianBlurSettings();
-
-        [SerializeField] 
-        [HideInInspector]
-        [Reload("Textures/BlueNoise/LDR_LLL1_{0}.png", 0, 7)]
+        [SerializeField] [HideInInspector] [Reload("Textures/BlueNoise/LDR_LLL1_{0}.png", 0, 7)]
         public Texture2D[] blueNoise;
 
-        [SerializeField]
-        [HideInInspector]
-        [Reload("Shaders/GaussianBlur.shader")]
+        [SerializeField] [HideInInspector] [Reload("Shaders/GaussianBlur.shader")]
         public Shader GaussianBlurShader;
 
-        [SerializeField] 
-        [HideInInspector]
-        [Reload("Shaders/KawaseBlur.shader")]
+        [SerializeField] [HideInInspector] [Reload("Shaders/KawaseBlur.shader")]
         public Shader KawaseBlurShader;
 
-        [SerializeField] 
-        [HideInInspector]
-        [Reload("Shaders/DualBlur.shader")]
+        [SerializeField] [HideInInspector] [Reload("Shaders/DualBlur.shader")]
         public Shader DualBlurShader;
 
-        [SerializeField] 
-        [HideInInspector]
-        [Reload("Shaders/BokehBlur.shader")]
+        [SerializeField] [HideInInspector] [Reload("Shaders/BokehBlur.shader")]
         public Shader BokehBlurShader;
 
-        [SerializeField] 
-        [HideInInspector]
-        [Reload("Shaders/GrainyBlur.shader")]
+        [SerializeField] [HideInInspector] [Reload("Shaders/GrainyBlur.shader")]
         public Shader GrainyBlurShader;
 
-        [SerializeField] 
-        [HideInInspector]
-        [Reload("Shaders/RadialBlur.shader")]
+        [SerializeField] [HideInInspector] [Reload("Shaders/RadialBlur.shader")]
         public Shader RadialBlurShader;
-        
-        [SerializeField]
-        [HideInInspector]
-        [Reload("Shaders/MaskBlend.shader")]
+
+        [SerializeField] [HideInInspector] [Reload("Shaders/MaskBlend.shader")]
         public Shader BlendShader;
-        
+
         // Private fields
-        public Material GaussianBlurMaterial;
-        public Material KawaseBlurMaterial;
-        public Material DualBlurMaterial;
-        public Material BokehBlurMaterial;
-        public Material GrainyBlurMaterial;
-        public Material RadialBlurMaterial;
-        public Material BlendMaterial;
+        private Material GaussianBlurMaterial;
+        private Material KawaseBlurMaterial;
+        private Material DualBlurMaterial;
+        private Material BokehBlurMaterial;
+        private Material GrainyBlurMaterial;
+        private Material RadialBlurMaterial;
+        private Material BlendMaterial;
+
         private GaussianBlurRendererPass m_GaussianBlurRendererPass;
         private KawaseBlurRenderPass m_KawaseBlurRenderPass;
         private DualBlurRenderPass m_DualBlurRenderPass;
         private BokehBlurRendererPass m_BokehBlurRendererPass;
         private GrainyBlurRendererPass m_GrainyBlurRendererPass;
         private RadialBlurRenderPass m_RadialBlurRenderPass;
-
-
-
 
         public enum ProfileId
         {
@@ -144,36 +110,42 @@ namespace KuanMi.Blur
                     return;
                 }
             }
-            
+
             var stack = VolumeManager.instance.stack;
 
 
-            if (m_GaussianBlurRendererPass.Setup(renderer, GaussianBlurMaterial,stack.GetComponent<GaussianBlur>().GetSetting(),BlendMaterial))
+            if (m_GaussianBlurRendererPass.Setup(renderer, GaussianBlurMaterial,
+                    stack.GetComponent<GaussianBlur>().GetSetting(), BlendMaterial))
             {
                 renderer.EnqueuePass(m_GaussianBlurRendererPass);
             }
 
-            if (m_KawaseBlurRenderPass.Setup(renderer, KawaseBlurMaterial,stack.GetComponent<KawaseBlur>().GetSetting(),BlendMaterial))
+            if (m_KawaseBlurRenderPass.Setup(renderer, KawaseBlurMaterial,
+                    stack.GetComponent<KawaseBlur>().GetSetting(), BlendMaterial))
             {
                 renderer.EnqueuePass(m_KawaseBlurRenderPass);
             }
 
-            if (m_DualBlurRenderPass.Setup(renderer, DualBlurMaterial,stack.GetComponent<DualBlur>().GetSetting(),BlendMaterial))
+            if (m_DualBlurRenderPass.Setup(renderer, DualBlurMaterial, stack.GetComponent<DualBlur>().GetSetting(),
+                    BlendMaterial))
             {
                 renderer.EnqueuePass(m_DualBlurRenderPass);
             }
 
-            if (m_BokehBlurRendererPass.Setup(renderer, BokehBlurMaterial,stack.GetComponent<BokehBlur>().GetSetting(),BlendMaterial))
+            if (m_BokehBlurRendererPass.Setup(renderer, BokehBlurMaterial, stack.GetComponent<BokehBlur>().GetSetting(),
+                    BlendMaterial))
             {
                 renderer.EnqueuePass(m_BokehBlurRendererPass);
             }
 
-            if (m_GrainyBlurRendererPass.Setup(renderer, GrainyBlurMaterial,stack.GetComponent<GrainyBlur>().GetSetting(),BlendMaterial))
+            if (m_GrainyBlurRendererPass.Setup(renderer, GrainyBlurMaterial,
+                    stack.GetComponent<GrainyBlur>().GetSetting(), BlendMaterial))
             {
                 renderer.EnqueuePass(m_GrainyBlurRendererPass);
             }
 
-            if (m_RadialBlurRenderPass.Setup(renderer, RadialBlurMaterial,stack.GetComponent<RadialBlur>().GetSetting(),BlendMaterial))
+            if (m_RadialBlurRenderPass.Setup(renderer, RadialBlurMaterial,
+                    stack.GetComponent<RadialBlur>().GetSetting(), BlendMaterial))
             {
                 renderer.EnqueuePass(m_RadialBlurRenderPass);
             }
@@ -201,9 +173,10 @@ namespace KuanMi.Blur
             CoreUtils.Destroy(BokehBlurMaterial);
             CoreUtils.Destroy(GrainyBlurMaterial);
             CoreUtils.Destroy(RadialBlurMaterial);
+            CoreUtils.Destroy(BlendMaterial);
         }
 
-        protected bool GetMaterials()
+        private bool GetMaterials()
         {
             if (GaussianBlurMaterial == null && GaussianBlurShader != null)
                 GaussianBlurMaterial = CoreUtils.CreateEngineMaterial(GaussianBlurShader);
@@ -218,11 +191,12 @@ namespace KuanMi.Blur
             if (RadialBlurMaterial == null && RadialBlurShader != null)
                 RadialBlurMaterial = CoreUtils.CreateEngineMaterial(RadialBlurShader);
 
-            if(BlendMaterial == null && BlendShader != null)
+            if (BlendMaterial == null && BlendShader != null)
                 BlendMaterial = CoreUtils.CreateEngineMaterial(BlendShader);
-            
+
             return (GrainyBlurMaterial != null && GaussianBlurMaterial != null && KawaseBlurMaterial != null &&
-                    DualBlurMaterial != null && BokehBlurMaterial != null && RadialBlurMaterial != null && BlendMaterial != null);
+                    DualBlurMaterial != null && BokehBlurMaterial != null && RadialBlurMaterial != null &&
+                    BlendMaterial != null);
         }
     }
 }
