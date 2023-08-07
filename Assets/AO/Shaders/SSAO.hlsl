@@ -39,7 +39,7 @@ half4 _SSAOBlueNoiseParams;
 
 
 // #if defined(_SAMPLE_COUNT_HIGH)
-static const int SAMPLE_COUNT = 12;
+static const int SAMPLE_COUNT = 8;
 // #elif defined(_SAMPLE_COUNT_MEDIUM)
 //     static const int SAMPLE_COUNT = 8;
 // #else
@@ -308,7 +308,7 @@ half3 ReconstructViewPos(float2 uv, float linearDepth)
 //     #endif
 // }
 
-half3 SampleNormal(float2 uv, float linearDepth, float2 pixelDensity)
+half3 SampleNormal(float2 uv)
 {
     // #if defined(_SOURCE_DEPTH_NORMALS)
     return half3(SampleSceneNormals(uv));
@@ -316,6 +316,16 @@ half3 SampleNormal(float2 uv, float linearDepth, float2 pixelDensity)
     //     float3 vpos = ReconstructViewPos(uv, linearDepth);
     //     return ReconstructNormal(uv, linearDepth, vpos, pixelDensity);
     // #endif
+}
+
+
+float ComputeAO(float3 p, float3 n, float3 s)
+{
+    float3 v = s - p;
+    float VoV = dot(v, v);
+    float NoV = dot(n, v) * rsqrt(VoV);
+
+    return saturate(NoV - 0.1);
 }
 
 // Distance-based AO estimator based on Morgan 2011
@@ -332,7 +342,6 @@ half4 SSAO(Varyings input) : SV_Target
     // return float4(noise, noise, noise, 1.0);
 
 
-    
     // Early Out for Sky...
     float rawDepth_o = SampleDepth(uv);
     if (rawDepth_o < SKY_DEPTH_VALUE)
@@ -344,17 +353,18 @@ half4 SSAO(Varyings input) : SV_Target
     if (halfLinearDepth_o > FALLOFF)
         return PackAONormal(HALF_ZERO, HALF_ZERO);
 
-    // #if defined(_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
-    //     float2 pixelDensity = RemapFoveatedRenderingDensity(RemapFoveatedRenderingNonUniformToLinear(uv));
-    // #else
-    float2 pixelDensity = float2(1.0f, 1.0f);
-    // #endif
-
     // Normal for this fragment
-    half3 normal_o = SampleNormal(uv, linearDepth_o, pixelDensity);
+    half3 normal_o = SampleNormal(uv);
+
+    // float3 normalVS = TransformWorldToViewNormal(normal_o);
+
+
+    // return float4(normalVS, 1.0);
 
     // View position for this fragment
     float3 vpos_o = ReconstructViewPos(uv, linearDepth_o);
+
+    // return float4(vpos_o, 1.0);
 
     // Parameters used in coordinate conversion
     half3 camTransform000102 = half3(_CameraViewProjections[unity_eyeIndex]._m00,
@@ -367,42 +377,69 @@ half4 SSAO(Varyings input) : SV_Target
     const half rcpSampleCount = half(rcp(SAMPLE_COUNT));
     half ao = HALF_ZERO;
     half sHalf = HALF_MINUS_ONE;
+
+
+    float noise = SAMPLE_BLUE_NOISE(((uv + BlueNoiseOffset) * BlueNoiseScale));
+
+
+    float stepSize = 1.0 / SAMPLE_COUNT;
+    float stepAngle = HALF_TWO_PI / 8;
+
+
+    float3 forward = UNITY_MATRIX_V[2];
+    float3 right = UNITY_MATRIX_V[0];
+    float3 up = UNITY_MATRIX_V[1];
+    
+    float zDist = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_o));
+
     UNITY_UNROLL
-    for (int s = 0; s < SAMPLE_COUNT; s++)
+    for (int d = 0; d < 8; ++d)
     {
-        sHalf += HALF_ONE;
+        float angle = stepAngle * d + noise;
 
-        // Sample point
-        half3 v_s1 = PickSamplePoint(uv,  sHalf, rcpSampleCount, normal_o);
-        half3 vpos_s1 = half3(vpos_o + v_s1);
-        half2 spos_s1 = half2(
-            camTransform000102.x * vpos_s1.x + camTransform000102.y * vpos_s1.y + camTransform000102.z * vpos_s1.z,
-            camTransform101112.x * vpos_s1.x + camTransform101112.y * vpos_s1.y + camTransform101112.z * vpos_s1.z
-        );
+        float cosAng, sinAng;
+        sincos(angle, sinAng, cosAng);
+        // 1m 处半径100像素
+        float2 dir = float2(cosAng, sinAng) * 100;
 
-        half zDist = HALF_ZERO;
+        dir /= zDist;
 
-        zDist = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_s1));
-        half2 uv_s1_01 = saturate(half2(spos_s1 * rcp(zDist) + HALF_ONE) * HALF_HALF);
+        float rayPixels = 0;
 
-        // Relative depth of the sample point
-        float rawDepth_s = SampleDepth(uv_s1_01);
-        float linearDepth_s = GetLinearEyeDepth(rawDepth_s);
+        UNITY_UNROLL
+        for (int s = 0; s < SAMPLE_COUNT; ++s)
+        {
+            float2 uv_s1_01 = (rayPixels * dir) * _ScreenSize.zw + uv;
 
-        // We need to make sure we not use the AO value if the sample point it's outside the radius or if it's the sky...
-        half halfLinearDepth_s = half(linearDepth_s);
-        half isInsideRadius = abs(zDist - halfLinearDepth_s) < RADIUS ? 1.0 : 0.0;
-        isInsideRadius *= rawDepth_s > SKY_DEPTH_VALUE ? 1.0 : 0.0;
+            
 
-        // Relative postition of the sample point
-        half3 v_s2 = half3(ReconstructViewPos(uv_s1_01, linearDepth_s) - vpos_o);
+            float rawDepth_s = SampleDepth(uv_s1_01);
+            float linearDepth_s = GetLinearEyeDepth(rawDepth_s);
+            half3 v_s2 = half3(ReconstructViewPos(uv_s1_01, linearDepth_s));
 
-        // Estimate the obscurance value
-        half dotVal = dot(v_s2, normal_o) - kBeta * halfLinearDepth_o;
-        half a1 = max(dotVal, HALF_ZERO);
-        half a2 = dot(v_s2, v_s2) + kEpsilon;
-        ao += a1 * rcp(a2) * isInsideRadius;
+
+
+            // return float4(zDist, zDist, zDist, 1.0);
+
+            half halfLinearDepth_s = half(linearDepth_s);
+            half isInsideRadius = length(v_s2 - vpos_o) < 0.5 ? 1.0 : 0.0;
+
+            
+            // return float4(rawDepth_s, rawDepth_s, rawDepth_s, 1.0);
+            
+
+            
+
+            // return float4(v_s2, 1.0);
+
+
+            rayPixels += stepSize;
+            float tmpAO = ComputeAO(vpos_o, normal_o, v_s2);
+            ao += tmpAO * isInsideRadius;
+        }
     }
+
+    return 1 - ao / (SAMPLE_COUNT * 8);
 
     // Intensity normalization
     ao *= RADIUS;
@@ -414,9 +451,9 @@ half4 SSAO(Varyings input) : SV_Target
     // Apply contrast + intensity + falloff^2
     ao = PositivePow(saturate(ao * INTENSITY * falloff * rcpSampleCount), kContrast);
 
-    ao = 1 -ao;
+    ao = 1 - ao;
 
-    return float4(ao, ao,ao, HALF_ONE);
+    return float4(ao, ao, ao, HALF_ONE);
     // Return the packed ao + normals
     return PackAONormal(ao, normal_o);
 }

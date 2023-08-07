@@ -64,6 +64,8 @@ namespace AO
             base.Dispose(disposing);
             CoreUtils.Destroy(material);
             material = null;
+            
+            SSAOPass.Dispose();
         }
 
         public enum ProfileId

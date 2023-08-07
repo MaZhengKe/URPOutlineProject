@@ -128,5 +128,11 @@ namespace AO
             ConfigureInput(ScriptableRenderPassInput.Normal);
             
         }
+
+
+        public void Dispose()
+        {
+            
+        }
     }
 }
