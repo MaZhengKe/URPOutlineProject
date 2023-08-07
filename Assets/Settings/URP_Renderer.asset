@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
   m_Name: ScreenSpaceAmbientOcclusion
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   m_Settings:
     AOMethod: 0
     Downsample: 0
@@ -207,7 +207,7 @@ MonoBehaviour:
     zFailOperation: 0
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 0
-  m_DepthPrimingMode: 0
+  m_DepthPrimingMode: 2
   m_CopyDepthMode: 1
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 1
@@ -255,6 +255,18 @@ MonoBehaviour:
   m_Active: 1
   shader: {fileID: 4800000, guid: 8598a84d209d4547a9e3b5a05503f8ca, type: 3}
   material: {fileID: 0}
+  m_Settings:
+    Intensity: 3
+    Radius: 0.035
+    Falloff: 100
+  blueNoise:
+  - {fileID: 2800000, guid: e98034f5dc9fce64a9116b89214a59a8, type: 3}
+  - {fileID: 2800000, guid: 2551b05df7c2b4b4cb7eb0df0072bcf7, type: 3}
+  - {fileID: 2800000, guid: 5ea4d35505ee8fa41a00f160a8b300ac, type: 3}
+  - {fileID: 2800000, guid: ec5b4eaeeaa3ab243a5c403d75534b23, type: 3}
+  - {fileID: 2800000, guid: db1fa4c51f563374db296c6c594f706f, type: 3}
+  - {fileID: 2800000, guid: bf1311a613a7a0340b1b11269dca3c4c, type: 3}
+  - {fileID: 2800000, guid: 1a3411c6efb10b94ab2b2389495a1063, type: 3}
 --- !u!114 &8430804913786909302
 MonoBehaviour:
   m_ObjectHideFlags: 0

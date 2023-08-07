@@ -383,7 +383,7 @@ half4 SSAO(Varyings input) : SV_Target
 
 
     float stepSize = 1.0 / SAMPLE_COUNT;
-    float stepAngle = HALF_TWO_PI / 8;
+    float stepAngle = HALF_TWO_PI / 4;
 
 
     float3 forward = UNITY_MATRIX_V[2];
@@ -393,23 +393,39 @@ half4 SSAO(Varyings input) : SV_Target
     float zDist = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_o));
 
     UNITY_UNROLL
-    for (int d = 0; d < 8; ++d)
+    for (int d = 0; d < 4; ++d)
     {
-        float angle = stepAngle * d + noise;
+        float angle = stepAngle * d;
 
         float cosAng, sinAng;
         sincos(angle, sinAng, cosAng);
         // 1m 处半径100像素
-        float2 dir = float2(cosAng, sinAng) * 100;
+        // float3 dir = float2(cosAng, sinAng) * 100;
 
-        dir /= zDist;
+        // float3 dir = float3(0,sinAng,cosAng)*0.1;
+
+        float3 dir = (cosAng* right + sinAng * up)*0.1;
+        // dir /= zDist;
 
         float rayPixels = 0;
 
         UNITY_UNROLL
         for (int s = 0; s < SAMPLE_COUNT; ++s)
         {
-            float2 uv_s1_01 = (rayPixels * dir) * _ScreenSize.zw + uv;
+            float3 vpos_s1 = vpos_o + dir * rayPixels;
+
+            
+            
+            half2 spos_s1 = half2(
+                camTransform000102.x * vpos_s1.x + camTransform000102.y * vpos_s1.y + camTransform000102.z * vpos_s1.z,
+                camTransform101112.x * vpos_s1.x + camTransform101112.y * vpos_s1.y + camTransform101112.z * vpos_s1.z
+            );
+
+            
+            float zDist2 = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_s1));
+            half2 uv_s1_01 = saturate(half2(spos_s1 * rcp(zDist2) + HALF_ONE) * HALF_HALF);
+            
+            // float2 uv_s1_01 = (rayPixels * dir) * _ScreenSize.zw + uv;
 
             
 
@@ -439,7 +455,7 @@ half4 SSAO(Varyings input) : SV_Target
         }
     }
 
-    return 1 - ao / (SAMPLE_COUNT * 8);
+    return 1 - ao / (SAMPLE_COUNT * 4);
 
     // Intensity normalization
     ao *= RADIUS;
