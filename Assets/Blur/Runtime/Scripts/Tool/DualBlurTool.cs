@@ -1,39 +1,29 @@
-﻿using UnityEngine;
+﻿using Blur.Runtime.Scripts.Settings;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public class DualBlurTool : BaseTool<DualBlur>
+    public class DualBlurTool : BaseTool<BlurSetting>
     {
         public override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.DualBlur;
 
-        public float blurRadius;
-        public int iteration;
+
 
         RTHandle[] m_Down;
         RTHandle[] m_Up;
         const int k_MaxPyramidSize = 16;
 
-        public DualBlurTool(ScriptableRenderPass renderPass) : base(renderPass)
+        public DualBlurTool(ScriptableRenderPass renderPass,BlurSetting setting) : base(renderPass,setting)
         {
             m_Down = new RTHandle[k_MaxPyramidSize];
             m_Up = new RTHandle[k_MaxPyramidSize];
         }
 
-        public override void UpdateTool(float width, float height)
-        {
-            base.UpdateTool(width, height);
-
-            blurRadius = blurVolume.BlurRadius.value;
-            iteration = blurVolume.Iteration.value;
-        }
-
-        public override string ShaderName => "KuanMi/DualBlur";
-
         public override void OnCameraSetup(RenderTextureDescriptor descriptor)
         {
-            for (int i = 0; i < iteration; i++)
+            for (int i = 0; i < setting.Iteration; i++)
             {
                 RenderingUtils.ReAllocateIfNeeded(ref m_Down[i], descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp,
                     name: "_Down" + i);
@@ -48,14 +38,14 @@ namespace KuanMi.Blur
         public override void Execute(CommandBuffer cmd, RTHandle source, RTHandle target)
         {
             m_Material.SetVector(BlitTextureSt, new Vector4(1, 1, 0, 0));
-            m_Material.SetFloat(BlurRadiusID, blurRadius);
+            m_Material.SetFloat(BlurRadiusID, setting.BlurRadius);
 
             Blitter.BlitCameraTexture(cmd, source, m_Down[0],
                 RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, m_Material, 1);
 
             var lastDown = m_Down[0];
 
-            for (int i = 1; i < iteration; i++)
+            for (int i = 1; i < setting.Iteration; i++)
             {
                 Blitter.BlitCameraTexture(cmd, lastDown, m_Down[i], RenderBufferLoadAction.DontCare,
                     RenderBufferStoreAction.Store, m_Material, 1);
@@ -63,7 +53,7 @@ namespace KuanMi.Blur
             }
 
             var lastUp = lastDown;
-            for (int i = iteration - 2; i >= 0; i--)
+            for (int i = setting.Iteration - 2; i >= 0; i--)
             {
                 Blitter.BlitCameraTexture(cmd, lastUp, m_Up[i], RenderBufferLoadAction.DontCare,
                     RenderBufferStoreAction.Store, m_Material, 0);

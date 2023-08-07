@@ -1,14 +1,17 @@
-﻿using UnityEngine;
+﻿using Blur.Runtime.Scripts.Settings;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public abstract class BaseBlurRendererPassWithVolume<K> : BaseBlurRendererPass where K : BaseBlur
+    public abstract class BaseBlurRendererPassWithMask<K> : BaseBlurRendererPass where K : BlurSetting
     {
-        protected K blurVolume;
+        protected K blurSetting;
 
         protected MaskBlur maskBlur;
+        
+        protected Material m_BlendMaterial;
 
         protected bool isMask => maskBlur.isMask.value;
 
@@ -17,17 +20,21 @@ namespace KuanMi.Blur
 
         protected RTHandle m_MaskTexture;
         protected RTHandle m_TargetTexture;
+        
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             base.OnCameraSetup(cmd, ref renderingData);
 
             var stack = VolumeManager.instance.stack;
-            blurVolume = stack.GetComponent<K>();
             maskBlur = stack.GetComponent<MaskBlur>();
+            if(blurSetting != null)
+            {
+                
+                descriptor.width /= blurSetting.DownSample;
+                descriptor.height /= blurSetting.DownSample;
 
-            descriptor.width /= blurVolume.DownSample.value;
-            descriptor.height /= blurVolume.DownSample.value;
+            }
 
             if (isMask)
             {
@@ -51,7 +58,6 @@ namespace KuanMi.Blur
             }
 
             var stack = VolumeManager.instance.stack;
-            blurVolume = stack.GetComponent<K>();
 
             maskBlur = stack.GetComponent<MaskBlur>();
 
@@ -99,18 +105,18 @@ namespace KuanMi.Blur
             CommandBufferPool.Release(cmd);
         }
 
-        public override bool Setup(ScriptableRenderer renderer)
+        public virtual bool Setup(ScriptableRenderer renderer,Material material,K featureSettings,Material blendMaterial)
         {
+            blurSetting = featureSettings;
+            m_BlendMaterial = blendMaterial;
+            
             if (!base.Setup(renderer))
                 return false;
-
-            blurVolume = VolumeManager.instance.stack.GetComponent<K>();
-            return blurVolume.IsActive();
+            return blurSetting.Iteration > 0 && blurSetting.BlurRadius > 0;
         }
 
-        public override void Dispose()
+        public virtual void Dispose()
         {
-            base.Dispose();
             m_MaskTexture?.Release();
         }
     }

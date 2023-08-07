@@ -1,25 +1,33 @@
 ﻿using System;
+using Blur.Runtime.Scripts.Settings;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public abstract class BaseBlurPass<T, K> : BaseBlurRendererPassWithVolume<K>
-        where T : BaseTool<K> where K : BaseBlur
+    public abstract class BaseBlurPass<T, K> : BaseBlurRendererPassWithMask<K> where T : BaseTool<K> where K : BlurSetting
     {
-        public T tool;
+        private readonly T tool;
         protected override BlurRendererFeature.ProfileId ProfileId => tool.ProfileId;
 
-
-        public BaseBlurPass()
+        protected BaseBlurPass()
         {
-            tool = (T)Activator.CreateInstance(typeof(T), this);
+            blurSetting = (K)Activator.CreateInstance(typeof(K));
+            tool = (T)Activator.CreateInstance(typeof(T), this, blurSetting);
+        }
+
+        public override bool Setup(ScriptableRenderer renderer, Material material, K featureSettings,
+            Material blendMaterial)
+        {
+            tool.m_Material = material;
+            tool.setting = featureSettings;
+            return base.Setup(renderer, material, featureSettings,blendMaterial);
         }
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             base.OnCameraSetup(cmd, ref renderingData);
-            UpdateTool();
             tool.OnCameraSetup(descriptor);
         }
 
@@ -31,17 +39,8 @@ namespace KuanMi.Blur
 
         public override void ExecuteWithCmd(CommandBuffer cmd, ref RenderingData renderingData)
         {
-            UpdateTool();
             tool.Execute(cmd, m_Renderer.cameraColorTargetHandle,
-                isMask ? m_MaskTexture :  renderToTexture? m_TargetTexture: m_Renderer.cameraColorTargetHandle);
-        }
-
-        public virtual void UpdateTool()
-        {
-            if (m_Renderer != null && m_Renderer.cameraColorTargetHandle != null &&
-                m_Renderer.cameraColorTargetHandle.rt != null)
-                tool.UpdateTool(m_Renderer.cameraColorTargetHandle.rt.width,
-                    m_Renderer.cameraColorTargetHandle.rt.height);
+                isMask ? m_MaskTexture : renderToTexture ? m_TargetTexture : m_Renderer.cameraColorTargetHandle);
         }
     }
 }

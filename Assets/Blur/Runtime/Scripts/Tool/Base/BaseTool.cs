@@ -1,16 +1,14 @@
-﻿using UnityEngine;
+﻿using Blur.Runtime.Scripts.Settings;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public abstract class BaseTool<K> where K : BaseBlur
+    public abstract class BaseTool<K> where K : BlurSetting
     {
-        
         public abstract BlurRendererFeature.ProfileId ProfileId { get; }
-        
-        public abstract string ShaderName { get; }
-        public Material m_Material { get; protected set; }
+        public Material m_Material { get;  set; }
         
         protected static readonly int BlurRadiusID = Shader.PropertyToID("_Offset");
         protected static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
@@ -24,31 +22,20 @@ namespace KuanMi.Blur
         
         protected ScriptableRenderPass _renderPass;
         
-        public K blurVolume;
-
-        public virtual void UpdateTool(float width, float height)
-        {
-            if (blurVolume == null)
-            {
-                Debug.Log(blurVolume);
-                blurVolume = VolumeManager.instance.stack.GetComponent<K>();
-            }
-        }
+        public K setting;
         
-        public BaseTool(ScriptableRenderPass renderPass, K blurVolume = null)
+        
+        public BaseTool(ScriptableRenderPass renderPass, K setting)
         {
             _renderPass = renderPass;
-            if(blurVolume!=null)
-                this.blurVolume = blurVolume;
+            this.setting = setting;
             
-            m_Material = CoreUtils.CreateEngineMaterial(Shader.Find(ShaderName));
         }
         public abstract void OnCameraSetup(RenderTextureDescriptor descriptor);
         public abstract void Execute(CommandBuffer cmd, RTHandle source, RTHandle target);
         
         public virtual void Dispose()
         {
-            CoreUtils.Destroy(m_Material);
         }
         
         protected void Blit(CommandBuffer cmd, RTHandle source, RTHandle target)

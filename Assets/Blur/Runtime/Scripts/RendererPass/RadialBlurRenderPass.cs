@@ -1,6 +1,6 @@
 ﻿namespace KuanMi.Blur
 {
-    public class RadialBlurRenderPass : BaseBlurPass<RadialBlurTool,RadialBlur>
+    public class RadialBlurRenderPass : BaseBlurPass<RadialBlurTool,RadialSetting>
     {
         
     }

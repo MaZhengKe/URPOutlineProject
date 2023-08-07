@@ -30,7 +30,7 @@ namespace KuanMi.VolumetricLighting
 
         public DirectionalVolumeRenderPass()
         {
-            blurTool = new GaussianBlurTool(this);
+            blurTool = new GaussianBlurTool(this,new GaussianSetting());
             BlitMaterial = CoreUtils.CreateEngineMaterial(Shader.Find(BlitShaderName));
         }
 
@@ -81,12 +81,12 @@ namespace KuanMi.VolumetricLighting
                     CoreUtils.SetRenderTarget(cmd, volumetricLightingTexture);
                     CoreUtils.DrawFullScreen(cmd, m_Material);
                 }
-
-                blurTool.blurRadius = m_VolumetricLighting.BlurRadius.value;
-                blurTool.iteration = m_VolumetricLighting.Iteration.value;
-
-                blurTool.width = m_Renderer.cameraColorTargetHandle.rt.width;
-                blurTool.height = m_Renderer.cameraColorTargetHandle.rt.height;
+                //
+                // blurTool.blurRadius = m_VolumetricLighting.BlurRadius.value;
+                // blurTool.iteration = m_VolumetricLighting.Iteration.value;
+                //
+                // blurTool.width = m_Renderer.cameraColorTargetHandle.rt.width;
+                // blurTool.height = m_Renderer.cameraColorTargetHandle.rt.height;
 
                 blurTool.Execute(cmd, volumetricLightingTexture, blurVolumetricLightingTexture);
 
@@ -98,10 +98,13 @@ namespace KuanMi.VolumetricLighting
             CommandBufferPool.Release(cmd);
         }
 
-        public bool Setup(ScriptableRenderer renderer, Material material)
+        public bool Setup(ScriptableRenderer renderer, Material material, Material blurMat,
+            GaussianSetting gaussianSetting)
         {
             m_Renderer = renderer;
             m_Material = material;
+            blurTool.m_Material = blurMat;
+            blurTool.setting = gaussianSetting;
             return true;
         }
 

@@ -1,6 +1,8 @@
-﻿namespace KuanMi.Blur
+﻿using Blur.Runtime.Scripts.Settings;
+
+namespace KuanMi.Blur
 {
-    public class BokehBlurRendererPass : BaseBlurPass<BokehBlurTool,BokehBlur>
+    public class BokehBlurRendererPass : BaseBlurPass<BokehBlurTool,BlurSetting>
     {
 
     }

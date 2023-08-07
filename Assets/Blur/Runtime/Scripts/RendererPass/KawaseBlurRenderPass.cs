@@ -1,6 +1,8 @@
-﻿namespace KuanMi.Blur
+﻿using Blur.Runtime.Scripts.Settings;
+
+namespace KuanMi.Blur
 {
-    public class KawaseBlurRenderPass : BaseBlurPass<KawaseBlurTool,KawaseBlur>
+    public class KawaseBlurRenderPass : BaseBlurPass<KawaseBlurTool,BlurSetting>
     {
     }
 }

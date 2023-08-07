@@ -1,32 +1,21 @@
-﻿using UnityEngine;
+﻿using Blur.Runtime.Scripts.Settings;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace KuanMi.Blur
 {
-    public class KawaseBlurTool: BaseTool<KawaseBlur>
+    public class KawaseBlurTool: BaseTool<BlurSetting>
     {
         public override BlurRendererFeature.ProfileId ProfileId => BlurRendererFeature.ProfileId.KawaseBlur;
-        public float blurRadius;
-        public int iteration;
-        public int downSample;
-        
+
         private RTHandle m_BlurTexture1;
         private RTHandle m_BlurTexture2;
 
-        public KawaseBlurTool(ScriptableRenderPass renderPass) : base(renderPass)
+        public KawaseBlurTool(ScriptableRenderPass renderPass,BlurSetting setting) : base(renderPass,setting)
         {
         }
 
-        public override void UpdateTool(float width, float height)
-        {
-            base.UpdateTool(width, height);
-            blurRadius = blurVolume.BlurRadius.value;
-            iteration = blurVolume.Iteration.value;
-            downSample = blurVolume.DownSample.value;
-        }
-
-        public override string ShaderName => "KuanMi/KawaseBlur";
         public override void OnCameraSetup(RenderTextureDescriptor descriptor)
         {
             RenderingUtils.ReAllocateIfNeeded(ref m_BlurTexture1, descriptor, FilterMode.Bilinear,
@@ -41,13 +30,13 @@ namespace KuanMi.Blur
 
             bool needSwitch = true;
 
-            for (int i = 0; i < iteration; i++)
+            for (int i = 0; i < setting. Iteration; i++)
             {
                 var sourceT = needSwitch ? m_BlurTexture1 : m_BlurTexture2;
                 var targetT = needSwitch ? m_BlurTexture2 : m_BlurTexture1;
 
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
-                block.SetFloat(BlurRadiusID, (float)i / downSample + blurRadius);
+                block.SetFloat(BlurRadiusID, (float)i / setting.DownSample +setting. BlurRadius);
                 block.SetTexture(BlitTexture, sourceT);
 
                 CoreUtils.DrawFullScreen(cmd, m_Material, targetT, block);
@@ -55,7 +44,7 @@ namespace KuanMi.Blur
                 needSwitch = !needSwitch;
             }
 
-            m_Material.SetFloat(BlurRadiusID, (float)iteration / downSample + blurRadius);
+            m_Material.SetFloat(BlurRadiusID, (float)setting.Iteration / setting.DownSample + setting.BlurRadius);
             Blit(cmd, needSwitch ? m_BlurTexture1 : m_BlurTexture2, target, m_Material);
 
         }

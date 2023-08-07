@@ -1,9 +1,10 @@
-﻿using UnityEngine.Rendering;
+﻿using Blur.Runtime.Scripts.Settings;
+using UnityEngine.Rendering;
 
 namespace KuanMi.Blur
 {
     [VolumeComponentMenu("KuanMi/Blur/KawaseBlur")]
-    public class KawaseBlur : BaseBlur
+    public class KawaseBlur : BaseBlur<BlurSetting>
     {
         
     }
