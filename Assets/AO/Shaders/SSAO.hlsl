@@ -132,6 +132,15 @@ static const half HALF_NINE = half(9.0);
 static const half HALF_HUNDRED = half(100.0);
 
 
+static const float NUM_STEPS = 4;
+static const float NUM_DIRECTIONS = 8;
+static const float _InvFullResolution = 1.0 / 1024.0;
+static const float _NDotVBias = 0.1;
+static const float R = 0.3;
+static const float R2 = R * R;
+static const float _NegInvR2 = -1.0 / R2;
+
+
 #define unity_eyeIndex 0
 
 
@@ -182,7 +191,7 @@ half3 PickSamplePoint(float2 uv, half sampleIndexHalf, half rcpSampleCount, half
 {
     const half lerpVal = sampleIndexHalf * rcpSampleCount;
     const half noise = SAMPLE_BLUE_NOISE(((uv + BlueNoiseOffset) * BlueNoiseScale) + lerpVal);
-    
+
     const half u = frac(GetRandomVal(HALF_ZERO, sampleIndexHalf).x + noise) * HALF_TWO - HALF_ONE;
     const half theta = (GetRandomVal(HALF_ONE, sampleIndexHalf).x + noise) * HALF_TWO_PI * HALF_HUNDRED;
     const half u2 = half(sqrt(HALF_ONE - u * u));
@@ -320,13 +329,30 @@ half3 SampleNormal(float2 uv)
 }
 
 
-float ComputeAO(float3 p, float3 n, float3 s)
+float ComputeAO2(float3 p, float3 n, float3 s)
 {
     float3 v = s - p;
     float VoV = dot(v, v);
     float NoV = dot(n, v) * rsqrt(VoV);
 
     return saturate(NoV - 0.1);
+}
+
+
+float Falloff(float DistanceSquare)
+{
+    // return  1;
+    // 1 scalar mad instruction
+    return DistanceSquare * _NegInvR2 + 1.0;
+}
+
+float ComputeAO(float3 p, float3 n, float3 s)
+{
+    float3 v = s - p;
+    float VdotV = dot(v, v);
+    float NdotV = dot(n, v) * rsqrt(VdotV);
+
+    return clamp(NdotV - _NDotVBias, 0, 1) * clamp(Falloff(VdotV), 0, 1);
 }
 
 
@@ -348,104 +374,97 @@ float2 GetUVFromWorldPos(float3 worldPos)
     return uv;
 }
 
+float3 FetchViewPos(float2 uv)
+{
+    float rawDepth = SampleDepth(uv);
+    float3 viewPos = ComputeViewSpacePosition(uv, rawDepth,UNITY_MATRIX_I_P);
+    return viewPos;
+}
+
+float random(float v)
+{
+    return frac(sin(v * 42.5) * 43758.5453123);
+}
+
+float4 GetJitter(float2 uv)
+{
+    // (cos(Alpha),sin(Alpha),rand1,rand2)
+    // return textureLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
+
+    float Alpha = SAMPLE_BLUE_NOISE((uv + BlueNoiseOffset) * BlueNoiseScale);
+    Alpha *= 2.0 * PI;
+    return float4(cos(Alpha), sin(Alpha), random(Alpha), random(Alpha + 57));
+}
+
+
+float2 RotateDirection(float2 Dir, float2 CosSin)
+{
+    return float2(Dir.x * CosSin.x - Dir.y * CosSin.y,
+                  Dir.x * CosSin.y + Dir.y * CosSin.x);
+}
+
+//----------------------------------------------------------------------------------
+float3 ComputeCoarseAO(float2 FullResUV, float RadiusPixels, float4 Rand, float3 ViewPosition, float3 ViewNormal)
+{
+    // Divide by NUM_STEPS+1 so that the farthest samples are not fully attenuated
+    float StepSizePixels = RadiusPixels / (NUM_STEPS + 1);
+
+    const float Alpha = 2.0 * PI / NUM_DIRECTIONS;
+    float AO = 0;
+    for (float DirectionIndex = 0; DirectionIndex < NUM_DIRECTIONS; ++DirectionIndex)
+    {
+        float Angle = Alpha * DirectionIndex;
+
+        // Compute normalized 2D direction
+        float2 Direction = RotateDirection(float2(cos(Angle), sin(Angle)), Rand.xy);
+
+        // return float(Rand.x);
+
+
+        // Jitter starting sample within the first step
+        float RayPixels = (Rand.z * StepSizePixels + 1.0);
+
+        for (float StepIndex = 0; StepIndex < NUM_STEPS; ++StepIndex)
+        {
+            float2 SnappedUV = round(RayPixels * Direction) / _ScreenParams.xy + FullResUV;
+            float3 S = FetchViewPos(SnappedUV);
+            
+            // return S;
+            RayPixels += StepSizePixels;
+            AO += ComputeAO(ViewPosition, ViewNormal, S);
+        }
+    }
+
+    AO /= NUM_DIRECTIONS * NUM_STEPS;
+    return clamp(1.0 - AO * 2, 0.0, 1.0);
+}
+
 half4 HBAO(Varyings input) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-    
+
+    float _RadiusToScreen = 100;
+
     float2 uv = input.texcoord;
-    // return float4(uv, 0, 1);
+    float3 ViewPosition = FetchViewPos(uv);
+    float3 worldNormal = SampleNormal(uv);
+    float3 ViewNormal = TransformWorldToViewNormal(worldNormal);
 
-    float rawDepth_o = SampleDepth(uv);
+    ViewNormal.z = -ViewNormal.z;
 
-    // return float4(rawDepth_o, rawDepth_o, rawDepth_o, 1);
-    if (rawDepth_o < SKY_DEPTH_VALUE)
-        return PackAONormal(HALF_ZERO, HALF_ZERO);
+    float RadiusPixels = _RadiusToScreen / ViewPosition.z;
 
-    float linearDepth_o = GetLinearEyeDepth(rawDepth_o);
+    float4 Rand = GetJitter(uv);
+    // Rand = float4(1, 0, 0.5, 0.5);
 
-    
-    // return float4(linearDepth_o, linearDepth_o, linearDepth_o, 1);
+    // return float4(Rand.x, Rand.y, Rand.z, Rand.w);
 
-    float3 normal = SampleNormal(uv);
-    float3 normalVS = TransformWorldToViewDir(normal);
-    
-    float3 posVS = ComputeViewSpacePosition(input.texcoord, rawDepth_o, UNITY_MATRIX_I_P);
-    posVS.z = -posVS.z;
+    float AO = ComputeCoarseAO(uv, RadiusPixels, Rand, ViewPosition, ViewNormal);
+    // AO = Rand.x;
 
-    float2 uva = GetUVFromViewPos(posVS);
-    // return float4(uva, 0, 1);
-    
-    
-    // float3 viewWS = normalize(_WorldSpaceCameraPos.xyz - worldPos);
-
-    float3 viewVS = normalize(posVS);
-
-    // viewWS = _WorldSpaceCameraDir.xyz;
-
-    float stepNum = 8.0;
-    float dirNum = 8.0;
-    float radius = 0.2;
-
-    float3 tmpUp = float3(0, 1, 0);
-    float3 right = normalize(cross(tmpUp, viewVS));
-    float3 up = normalize(cross(viewVS, right));
-
-    // right = float3(1, 0, 0);
-    // up = float3(0, 1, 0);
-
-    // return float4(up , 1);
-
-    float noise = SAMPLE_BLUE_NOISE(((uv + BlueNoiseOffset) * BlueNoiseScale));
-    // noise = 0;
-
-    float h = 0;
-    
-    UNITY_UNROLL
-    for (int i = 0; i < dirNum; ++i)
-    {
-        float angle = i * 3.1415926 * 2.0 / dirNum + noise * 3.1415926 * 2.0;
-        float3 dir = normalize(cos(angle) * right + sin(angle) * up);
-        // return float4(dir *2 - 1, 1);
-        float sint = dot(normalVS, dir);
-        float sinh = 0;
-        float r = 0;
-        
-        for (int s = 1; s <= stepNum; ++s)
-        {
-            float3 p = posVS + dir * radius * (s + noise)/stepNum;
-
-            float2 uv_p = GetUVFromViewPos(p);
-            float rawDepth_p = SampleDepth(uv_p);
-
-            float3 viewPos_p = ComputeViewSpacePosition(uv_p, rawDepth_p, UNITY_MATRIX_I_P);
-            viewPos_p.z = -viewPos_p.z;
-
-            float len = Length2(viewPos_p - posVS);
-            // if(len > radius*radius)
-            //     break;
-            
-            bool ao = viewPos_p.z > p.z;
-            if(ao)
-            {
-                float tmpH = dot(normalVS, normalize(viewPos_p - posVS));
-                if(tmpH > sinh)
-                {
-                    sinh = tmpH;
-                    r = len;
-                }
-            }
-        }
-        h = h + (sinh - sint) * (1 - r / radius);
-    }
-
-    h /= dirNum * stepNum;
-    // h = 1 - h;
-    return float4(h, h, h, 1);
-
-    
-    
-    
-    // return float4(viewWS,1);
+    AO = pow(AO, 2);
+    // AO = 1 - AO;
+    return float4(AO,AO,AO, 1);
 }
 
 
@@ -510,7 +529,7 @@ half4 SSAO(Varyings input) : SV_Target
     float3 forward = UNITY_MATRIX_V[2];
     float3 right = UNITY_MATRIX_V[0];
     float3 up = UNITY_MATRIX_V[1];
-    
+
     float zDist = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_o));
 
     UNITY_UNROLL
@@ -525,7 +544,7 @@ half4 SSAO(Varyings input) : SV_Target
 
         // float3 dir = float3(0,sinAng,cosAng)*0.1;
 
-        float3 dir = (cosAng* right + sinAng * up)*0.1;
+        float3 dir = (cosAng * right + sinAng * up) * 0.1;
         // dir /= zDist;
 
         float rayPixels = stepSize;
@@ -535,25 +554,22 @@ half4 SSAO(Varyings input) : SV_Target
         {
             float3 vpos_s1 = vpos_o + dir * rayPixels;
 
-            
-            
+
             half2 spos_s1 = half2(
                 camTransform000102.x * vpos_s1.x + camTransform000102.y * vpos_s1.y + camTransform000102.z * vpos_s1.z,
                 camTransform101112.x * vpos_s1.x + camTransform101112.y * vpos_s1.y + camTransform101112.z * vpos_s1.z
             );
 
-            
+
             float zDist2 = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_s1));
             half2 uv_s1_01 = saturate(half2(spos_s1 * rcp(zDist2) + HALF_ONE) * HALF_HALF);
-            
+
             // float2 uv_s1_01 = (rayPixels * dir) * _ScreenSize.zw + uv;
 
-            
 
             float rawDepth_s = SampleDepth(uv_s1_01);
             float linearDepth_s = GetLinearEyeDepth(rawDepth_s);
             half3 v_s2 = half3(ReconstructViewPos(uv_s1_01, linearDepth_s));
-
 
 
             // return float4(zDist, zDist, zDist, 1.0);
@@ -561,22 +577,20 @@ half4 SSAO(Varyings input) : SV_Target
             half halfLinearDepth_s = half(linearDepth_s);
             half isInsideRadius = length(v_s2 - vpos_o) < 0.5 ? 1.0 : 0.0;
 
-            
-            // return float4(rawDepth_s, rawDepth_s, rawDepth_s, 1.0);
-            
 
-            
+            // return float4(rawDepth_s, rawDepth_s, rawDepth_s, 1.0);
+
 
             // return float4(v_s2, 1.0);
 
 
             rayPixels += stepSize;
-            float tmpAO = ComputeAO(vpos_o, normal_o, v_s2);
+            float tmpAO = ComputeAO2(vpos_o, normal_o, v_s2);
             ao += tmpAO * isInsideRadius;
         }
     }
 
-    return  ao / (SAMPLE_COUNT * 4);
+    return ao / (SAMPLE_COUNT * 4);
 
     // Intensity normalization
     ao *= RADIUS;
