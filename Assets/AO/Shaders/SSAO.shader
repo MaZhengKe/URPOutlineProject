@@ -32,7 +32,7 @@
 
             HLSLPROGRAM
                 #pragma vertex Vert
-                #pragma fragment SSAO
+                #pragma fragment HBAO
                 #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
             
                 #pragma multi_compile_local_fragment _BLUE_NOISE
