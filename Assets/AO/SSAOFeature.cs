@@ -11,6 +11,13 @@ namespace AO
         public float Intensity = 3.0f;
         public float Radius = 0.035f;
         public float Falloff = 100f;
+        
+        
+        public int NUM_STEPS = 4;
+        public int NUM_DIRECTIONS = 8;
+        public float NDotVBias = 0.1f;
+        public float RadiusToScreen = 100f;
+        
     }
 
     public class SSAOFeature : ScriptableRendererFeature

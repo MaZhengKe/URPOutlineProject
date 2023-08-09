@@ -27,6 +27,15 @@ namespace AO
         private static readonly int s_CameraViewProjectionsID = Shader.PropertyToID("_CameraViewProjections");
         private static readonly int s_CameraViewTopLeftCornerID = Shader.PropertyToID("_CameraViewTopLeftCorner");
 
+        
+        private static readonly int s_NUM_STEPSID = Shader.PropertyToID("_NUM_STEPS");
+        private static readonly int s_NUM_DIRECTIONSID = Shader.PropertyToID("_NUM_DIRECTIONS");
+        private static readonly int s_NDotVBiasID = Shader.PropertyToID("_NDotVBias");
+        private static readonly int s_RID = Shader.PropertyToID("R");
+        private static readonly int s_R2ID = Shader.PropertyToID("R2");
+        private static readonly int s_NegInvR2ID = Shader.PropertyToID("_NegInvR2");
+        private static readonly int s_RadiusToScreenID = Shader.PropertyToID("_RadiusToScreen");
+        
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             
@@ -94,6 +103,16 @@ namespace AO
                 blurRandomOffsetX, // X Offset
                 blurRandomOffsetY // Y Offset
             ));
+            
+            
+            
+            material.SetFloat(s_NUM_STEPSID, settings.NUM_STEPS);
+            material.SetFloat(s_NUM_DIRECTIONSID, settings.NUM_DIRECTIONS);
+            material.SetFloat(s_NDotVBiasID, settings.NDotVBias);
+            material.SetFloat(s_RID, settings.Radius);
+            material.SetFloat(s_R2ID, settings.Radius * settings.Radius);
+            material.SetFloat(s_NegInvR2ID, -1.0f / (settings.Radius * settings.Radius));
+            material.SetFloat(s_RadiusToScreenID,settings.RadiusToScreen);
             
             
             CoreUtils.SetKeyword(material, SSAOFeature.k_SampleCountLowKeyword, false);

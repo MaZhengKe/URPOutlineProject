@@ -132,13 +132,13 @@ static const half HALF_NINE = half(9.0);
 static const half HALF_HUNDRED = half(100.0);
 
 
-static const float NUM_STEPS = 4;
-static const float NUM_DIRECTIONS = 8;
-static const float _InvFullResolution = 1.0 / 1024.0;
-static const float _NDotVBias = 0.1;
-static const float R = 0.3;
-static const float R2 = R * R;
-static const float _NegInvR2 = -1.0 / R2;
+const float _NUM_STEPS = 4;
+const float _NUM_DIRECTIONS = 8;
+const float _NDotVBias = 0.1;
+
+const float _RadiusToScreen = 100;
+const float R2 = 0.25;
+const float _NegInvR2 = -1.0 / 0.24;
 
 
 #define unity_eyeIndex 0
@@ -186,23 +186,6 @@ half GetRandomVal(half u, half sampleIndex)
     return SSAORandomUV[u * 20 + sampleIndex];
 }
 
-// Sample point picker
-half3 PickSamplePoint(float2 uv, half sampleIndexHalf, half rcpSampleCount, half3 normal_o)
-{
-    const half lerpVal = sampleIndexHalf * rcpSampleCount;
-    const half noise = SAMPLE_BLUE_NOISE(((uv + BlueNoiseOffset) * BlueNoiseScale) + lerpVal);
-
-    const half u = frac(GetRandomVal(HALF_ZERO, sampleIndexHalf).x + noise) * HALF_TWO - HALF_ONE;
-    const half theta = (GetRandomVal(HALF_ONE, sampleIndexHalf).x + noise) * HALF_TWO_PI * HALF_HUNDRED;
-    const half u2 = half(sqrt(HALF_ONE - u * u));
-
-    half3 v = half3(u2 * cos(theta), u2 * sin(theta), u);
-    v *= (dot(normal_o, v) >= HALF_ZERO) * HALF_TWO - HALF_ONE;
-    v *= lerp(0.1, 1.0, lerpVal * lerpVal);
-    v *= RADIUS;
-    return v;
-}
-
 float SampleDepth(float2 uv)
 {
     return SampleSceneDepth(uv.xy);
@@ -210,11 +193,7 @@ float SampleDepth(float2 uv)
 
 float GetLinearEyeDepth(float rawDepth)
 {
-    // #if defined(_ORTHOGRAPHIC)
-    //     return LinearDepthToEyeDepth(rawDepth);
-    // #else
     return LinearEyeDepth(rawDepth, _ZBufferParams);
-    // #endif
 }
 
 float SampleAndGetLinearEyeDepth(float2 uv)
@@ -223,126 +202,13 @@ float SampleAndGetLinearEyeDepth(float2 uv)
     return GetLinearEyeDepth(rawDepth);
 }
 
-// This returns a vector in world unit (not a position), from camera to the given point described by uv screen coordinate and depth (in absolute world unit).
-half3 ReconstructViewPos(float2 uv, float linearDepth)
-{
-    // #if defined(_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
-    //     uv = RemapFoveatedRenderingNonUniformToLinear(uv);
-    // #endif
-
-    // Screen is y-inverted.
-    uv.y = 1.0 - uv.y;
-
-    // view pos in world space
-    // #if defined(_ORTHOGRAPHIC)
-    //     float zScale = linearDepth * _ProjectionParams.w; // divide by far plane
-    //     float3 viewPos = _CameraViewTopLeftCorner[unity_eyeIndex].xyz
-    //                         + _CameraViewXExtent[unity_eyeIndex].xyz * uv.x
-    //                         + _CameraViewYExtent[unity_eyeIndex].xyz * uv.y
-    //                         + _CameraViewZExtent[unity_eyeIndex].xyz * zScale;
-    // #else
-    float zScale = linearDepth * _ProjectionParams2.x; // divide by near plane
-    float3 viewPos = _CameraViewTopLeftCorner[unity_eyeIndex].xyz
-        + _CameraViewXExtent[unity_eyeIndex].xyz * uv.x
-        + _CameraViewYExtent[unity_eyeIndex].xyz * uv.y;
-    viewPos *= zScale;
-    // #endif
-
-    return half3(viewPos);
-}
-
-// Try reconstructing normal accurately from depth buffer.
-// Low:    DDX/DDY on the current pixel
-// Medium: 3 taps on each direction | x | * | y |
-// High:   5 taps on each direction: | z | x | * | y | w |
-// https://atyuwen.github.io/posts/normal-reconstruction/
-// https://wickedengine.net/2019/09/22/improved-normal-reconstruction-from-depth/
-// half3 ReconstructNormal(float2 uv, float linearDepth, float3 vpos, float2 pixelDensity)
-// {
-//     #if defined(_SOURCE_DEPTH_LOW)
-//         return half3(normalize(cross(ddy(vpos), ddx(vpos))));
-//     #else
-//         float2 delta = float2(_SourceSize.zw * 2.0);
-//
-//         pixelDensity = rcp(pixelDensity);
-//
-//         // Sample the neighbour fragments
-//         float2 lUV = float2(-delta.x, 0.0) * pixelDensity;
-//         float2 rUV = float2(delta.x, 0.0) * pixelDensity;
-//         float2 uUV = float2(0.0, delta.y) * pixelDensity;
-//         float2 dUV = float2(0.0, -delta.y) * pixelDensity;
-//
-//         float3 l1 = float3(uv + lUV, 0.0); l1.z = SampleAndGetLinearEyeDepth(l1.xy); // Left1
-//         float3 r1 = float3(uv + rUV, 0.0); r1.z = SampleAndGetLinearEyeDepth(r1.xy); // Right1
-//         float3 u1 = float3(uv + uUV, 0.0); u1.z = SampleAndGetLinearEyeDepth(u1.xy); // Up1
-//         float3 d1 = float3(uv + dUV, 0.0); d1.z = SampleAndGetLinearEyeDepth(d1.xy); // Down1
-//
-//         // Determine the closest horizontal and vertical pixels...
-//         // horizontal: left = 0.0 right = 1.0
-//         // vertical  : down = 0.0    up = 1.0
-//         #if defined(_SOURCE_DEPTH_MEDIUM)
-//              uint closest_horizontal = l1.z > r1.z ? 0 : 1;
-//              uint closest_vertical   = d1.z > u1.z ? 0 : 1;
-//         #else
-//             float3 l2 = float3(uv + lUV * 2.0, 0.0); l2.z = SampleAndGetLinearEyeDepth(l2.xy); // Left2
-//             float3 r2 = float3(uv + rUV * 2.0, 0.0); r2.z = SampleAndGetLinearEyeDepth(r2.xy); // Right2
-//             float3 u2 = float3(uv + uUV * 2.0, 0.0); u2.z = SampleAndGetLinearEyeDepth(u2.xy); // Up2
-//             float3 d2 = float3(uv + dUV * 2.0, 0.0); d2.z = SampleAndGetLinearEyeDepth(d2.xy); // Down2
-//
-//             const uint closest_horizontal = abs( (2.0 * l1.z - l2.z) - linearDepth) < abs( (2.0 * r1.z - r2.z) - linearDepth) ? 0 : 1;
-//             const uint closest_vertical   = abs( (2.0 * d1.z - d2.z) - linearDepth) < abs( (2.0 * u1.z - u2.z) - linearDepth) ? 0 : 1;
-//         #endif
-//
-//         // Calculate the triangle, in a counter-clockwize order, to
-//         // use based on the closest horizontal and vertical depths.
-//         // h == 0.0 && v == 0.0: p1 = left,  p2 = down
-//         // h == 1.0 && v == 0.0: p1 = down,  p2 = right
-//         // h == 1.0 && v == 1.0: p1 = right, p2 = up
-//         // h == 0.0 && v == 1.0: p1 = up,    p2 = left
-//         // Calculate the view space positions for the three points...
-//         half3 P1;
-//         half3 P2;
-//         if (closest_vertical == 0)
-//         {
-//             P1 = half3(closest_horizontal == 0 ? l1 : d1);
-//             P2 = half3(closest_horizontal == 0 ? d1 : r1);
-//         }
-//         else
-//         {
-//             P1 = half3(closest_horizontal == 0 ? u1 : r1);
-//             P2 = half3(closest_horizontal == 0 ? l1 : u1);
-//         }
-//
-//         // Use the cross product to calculate the normal...
-//         return half3(normalize(cross(ReconstructViewPos(P2.xy, P2.z) - vpos, ReconstructViewPos(P1.xy, P1.z) - vpos)));
-//     #endif
-// }
-
 half3 SampleNormal(float2 uv)
 {
-    // #if defined(_SOURCE_DEPTH_NORMALS)
     return half3(SampleSceneNormals(uv));
-    // #else
-    //     float3 vpos = ReconstructViewPos(uv, linearDepth);
-    //     return ReconstructNormal(uv, linearDepth, vpos, pixelDensity);
-    // #endif
 }
-
-
-float ComputeAO2(float3 p, float3 n, float3 s)
-{
-    float3 v = s - p;
-    float VoV = dot(v, v);
-    float NoV = dot(n, v) * rsqrt(VoV);
-
-    return saturate(NoV - 0.1);
-}
-
 
 float Falloff(float DistanceSquare)
 {
-    // return  1;
-    // 1 scalar mad instruction
     return DistanceSquare * _NegInvR2 + 1.0;
 }
 
@@ -353,25 +219,6 @@ float ComputeAO(float3 p, float3 n, float3 s)
     float NdotV = dot(n, v) * rsqrt(VdotV);
 
     return clamp(NdotV - _NDotVBias, 0, 1) * clamp(Falloff(VdotV), 0, 1);
-}
-
-
-float2 GetUVFromViewPos(float3 viewPos)
-{
-    float4 clipPos = TransformWViewToHClip(viewPos);
-    float2 uv = clipPos.xy / clipPos.w;
-    uv.y *= _ProjectionParams.x;
-    uv = uv * 0.5 + 0.5;
-    return uv;
-}
-
-float2 GetUVFromWorldPos(float3 worldPos)
-{
-    float4 clipPos = TransformWorldToHClip(worldPos);
-    float2 uv = clipPos.xy / clipPos.w;
-    uv.y *= _ProjectionParams.x;
-    uv = uv * 0.5 + 0.5;
-    return uv;
 }
 
 float3 FetchViewPos(float2 uv)
@@ -407,43 +254,38 @@ float2 RotateDirection(float2 Dir, float2 CosSin)
 float3 ComputeCoarseAO(float2 FullResUV, float RadiusPixels, float4 Rand, float3 ViewPosition, float3 ViewNormal)
 {
     // Divide by NUM_STEPS+1 so that the farthest samples are not fully attenuated
-    float StepSizePixels = RadiusPixels / (NUM_STEPS + 1);
+    float StepSizePixels = RadiusPixels / (_NUM_STEPS + 1);
 
-    const float Alpha = 2.0 * PI / NUM_DIRECTIONS;
+    const float Alpha = 2.0 * PI / _NUM_DIRECTIONS;
     float AO = 0;
-    for (float DirectionIndex = 0; DirectionIndex < NUM_DIRECTIONS; ++DirectionIndex)
+    for (float DirectionIndex = 0; DirectionIndex < _NUM_DIRECTIONS; ++DirectionIndex)
     {
         float Angle = Alpha * DirectionIndex;
 
         // Compute normalized 2D direction
         float2 Direction = RotateDirection(float2(cos(Angle), sin(Angle)), Rand.xy);
 
-        // return float(Rand.x);
-
-
         // Jitter starting sample within the first step
         float RayPixels = (Rand.z * StepSizePixels + 1.0);
 
-        for (float StepIndex = 0; StepIndex < NUM_STEPS; ++StepIndex)
+        for (float StepIndex = 0; StepIndex < _NUM_STEPS; ++StepIndex)
         {
             float2 SnappedUV = round(RayPixels * Direction) / _ScreenParams.xy + FullResUV;
             float3 S = FetchViewPos(SnappedUV);
-            
+
             // return S;
             RayPixels += StepSizePixels;
             AO += ComputeAO(ViewPosition, ViewNormal, S);
         }
     }
 
-    AO /= NUM_DIRECTIONS * NUM_STEPS;
+    AO /= _NUM_DIRECTIONS * _NUM_STEPS;
     return clamp(1.0 - AO * 2, 0.0, 1.0);
 }
 
 half4 HBAO(Varyings input) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-
-    float _RadiusToScreen = 100;
 
     float2 uv = input.texcoord;
     float3 ViewPosition = FetchViewPos(uv);
@@ -453,161 +295,14 @@ half4 HBAO(Varyings input) : SV_Target
     ViewNormal.z = -ViewNormal.z;
 
     float RadiusPixels = _RadiusToScreen / ViewPosition.z;
-
     float4 Rand = GetJitter(uv);
-    // Rand = float4(1, 0, 0.5, 0.5);
-
-    // return float4(Rand.x, Rand.y, Rand.z, Rand.w);
-
     float AO = ComputeCoarseAO(uv, RadiusPixels, Rand, ViewPosition, ViewNormal);
-    // AO = Rand.x;
 
     AO = pow(AO, 2);
+
+    AO*= INTENSITY;
     // AO = 1 - AO;
-    return float4(AO,AO,AO, 1);
+    return float4(AO, AO, AO, 1);
 }
-
-
-// Distance-based AO estimator based on Morgan 2011
-// "Alchemy screen-space ambient obscurance algorithm"
-// http://graphics.cs.williams.edu/papers/AlchemyHPG11/
-half4 SSAO(Varyings input) : SV_Target
-{
-    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-    float2 uv = input.texcoord;
-
-
-    // float noise = SAMPLE_BLUE_NOISE(((uv + BlueNoiseOffset) * BlueNoiseScale));
-    //
-    // return float4(noise, noise, noise, 1.0);
-
-
-    // Early Out for Sky...
-    float rawDepth_o = SampleDepth(uv);
-    if (rawDepth_o < SKY_DEPTH_VALUE)
-        return PackAONormal(HALF_ZERO, HALF_ZERO);
-
-    // Early Out for Falloff
-    float linearDepth_o = GetLinearEyeDepth(rawDepth_o);
-    half halfLinearDepth_o = half(linearDepth_o);
-    if (halfLinearDepth_o > FALLOFF)
-        return PackAONormal(HALF_ZERO, HALF_ZERO);
-
-    // Normal for this fragment
-    half3 normal_o = SampleNormal(uv);
-
-    // float3 normalVS = TransformWorldToViewNormal(normal_o);
-
-
-    // return float4(normalVS, 1.0);
-
-    // View position for this fragment
-    float3 vpos_o = ReconstructViewPos(uv, linearDepth_o);
-
-    // return float4(vpos_o, 1.0);
-
-    // Parameters used in coordinate conversion
-    half3 camTransform000102 = half3(_CameraViewProjections[unity_eyeIndex]._m00,
-                                     _CameraViewProjections[unity_eyeIndex]._m01,
-                                     _CameraViewProjections[unity_eyeIndex]._m02);
-    half3 camTransform101112 = half3(_CameraViewProjections[unity_eyeIndex]._m10,
-                                     _CameraViewProjections[unity_eyeIndex]._m11,
-                                     _CameraViewProjections[unity_eyeIndex]._m12);
-
-    const half rcpSampleCount = half(rcp(SAMPLE_COUNT));
-    half ao = HALF_ZERO;
-    half sHalf = HALF_MINUS_ONE;
-
-
-    float noise = SAMPLE_BLUE_NOISE(((uv + BlueNoiseOffset) * BlueNoiseScale));
-
-
-    float stepSize = 1.0 / SAMPLE_COUNT;
-    float stepAngle = HALF_TWO_PI / 4;
-
-
-    float3 forward = UNITY_MATRIX_V[2];
-    float3 right = UNITY_MATRIX_V[0];
-    float3 up = UNITY_MATRIX_V[1];
-
-    float zDist = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_o));
-
-    UNITY_UNROLL
-    for (int d = 0; d < 4; ++d)
-    {
-        float angle = stepAngle * d;
-
-        float cosAng, sinAng;
-        sincos(angle, sinAng, cosAng);
-        // 1m 处半径100像素
-        // float3 dir = float2(cosAng, sinAng) * 100;
-
-        // float3 dir = float3(0,sinAng,cosAng)*0.1;
-
-        float3 dir = (cosAng * right + sinAng * up) * 0.1;
-        // dir /= zDist;
-
-        float rayPixels = stepSize;
-
-        UNITY_UNROLL
-        for (int s = 1; s <= SAMPLE_COUNT; ++s)
-        {
-            float3 vpos_s1 = vpos_o + dir * rayPixels;
-
-
-            half2 spos_s1 = half2(
-                camTransform000102.x * vpos_s1.x + camTransform000102.y * vpos_s1.y + camTransform000102.z * vpos_s1.z,
-                camTransform101112.x * vpos_s1.x + camTransform101112.y * vpos_s1.y + camTransform101112.z * vpos_s1.z
-            );
-
-
-            float zDist2 = half(-dot(UNITY_MATRIX_V[2].xyz, vpos_s1));
-            half2 uv_s1_01 = saturate(half2(spos_s1 * rcp(zDist2) + HALF_ONE) * HALF_HALF);
-
-            // float2 uv_s1_01 = (rayPixels * dir) * _ScreenSize.zw + uv;
-
-
-            float rawDepth_s = SampleDepth(uv_s1_01);
-            float linearDepth_s = GetLinearEyeDepth(rawDepth_s);
-            half3 v_s2 = half3(ReconstructViewPos(uv_s1_01, linearDepth_s));
-
-
-            // return float4(zDist, zDist, zDist, 1.0);
-
-            half halfLinearDepth_s = half(linearDepth_s);
-            half isInsideRadius = length(v_s2 - vpos_o) < 0.5 ? 1.0 : 0.0;
-
-
-            // return float4(rawDepth_s, rawDepth_s, rawDepth_s, 1.0);
-
-
-            // return float4(v_s2, 1.0);
-
-
-            rayPixels += stepSize;
-            float tmpAO = ComputeAO2(vpos_o, normal_o, v_s2);
-            ao += tmpAO * isInsideRadius;
-        }
-    }
-
-    return ao / (SAMPLE_COUNT * 4);
-
-    // Intensity normalization
-    ao *= RADIUS;
-
-    // Calculate falloff...
-    half falloff = HALF_ONE - halfLinearDepth_o * half(rcp(FALLOFF));
-    falloff = falloff * falloff;
-
-    // Apply contrast + intensity + falloff^2
-    ao = PositivePow(saturate(ao * INTENSITY * falloff * rcpSampleCount), kContrast);
-
-    ao = 1 - ao;
-
-    return float4(ao, ao, ao, HALF_ONE);
-    // Return the packed ao + normals
-    return PackAONormal(ao, normal_o);
-}
-
 
 #endif //UNIVERSAL_SSAO_INCLUDED

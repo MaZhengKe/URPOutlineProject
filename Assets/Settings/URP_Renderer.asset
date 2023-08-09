@@ -19,10 +19,10 @@ MonoBehaviour:
     AfterOpaque: 0
     Source: 1
     NormalSamples: 1
-    Intensity: 3
+    Intensity: 1
     DirectLightingStrength: 0.25
-    Radius: 0.035
-    Samples: 1
+    Radius: 2
+    Samples: 0
     BlurQuality: 0
     Falloff: 100
     SampleCount: -1
@@ -256,9 +256,13 @@ MonoBehaviour:
   shader: {fileID: 4800000, guid: 8598a84d209d4547a9e3b5a05503f8ca, type: 3}
   material: {fileID: 0}
   m_Settings:
-    Intensity: 3
-    Radius: 0.035
-    Falloff: 100
+    Intensity: 0.35
+    Radius: 2
+    Falloff: 0
+    NUM_STEPS: 15
+    NUM_DIRECTIONS: 20
+    NDotVBias: 0.1
+    RadiusToScreen: 312.94
   blueNoise:
   - {fileID: 2800000, guid: e98034f5dc9fce64a9116b89214a59a8, type: 3}
   - {fileID: 2800000, guid: 2551b05df7c2b4b4cb7eb0df0072bcf7, type: 3}
