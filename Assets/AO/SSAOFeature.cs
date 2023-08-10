@@ -8,14 +8,19 @@ namespace AO
     [Serializable]
     public class SSAOSettings
     {
-        public float Intensity = 3.0f;
-        public float Radius = 0.035f;
         public float Falloff = 100f;
-        
-        
-        public int NUM_STEPS = 4;
-        public int NUM_DIRECTIONS = 8;
         public float NDotVBias = 0.1f;
+
+        [Range(0, 4)]
+        public float Intensity = 3.0f;
+        
+        [Range(0.25f, 5f)]
+        public float Radius = 0.035f;
+        [Range(2,32)]
+        public int NUM_STEPS = 4;
+        [Range(1,6)]
+        public int NUM_DIRECTIONS = 4;
+        [Range(16,256)]
         public float RadiusToScreen = 100f;
         
     }

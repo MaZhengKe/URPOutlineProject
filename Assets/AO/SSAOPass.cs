@@ -31,7 +31,7 @@ namespace AO
         private static readonly int s_NUM_STEPSID = Shader.PropertyToID("_NUM_STEPS");
         private static readonly int s_NUM_DIRECTIONSID = Shader.PropertyToID("_NUM_DIRECTIONS");
         private static readonly int s_NDotVBiasID = Shader.PropertyToID("_NDotVBias");
-        private static readonly int s_RID = Shader.PropertyToID("R");
+        private static readonly int s_RID = Shader.PropertyToID("_AORadius");
         private static readonly int s_R2ID = Shader.PropertyToID("R2");
         private static readonly int s_NegInvR2ID = Shader.PropertyToID("_NegInvR2");
         private static readonly int s_RadiusToScreenID = Shader.PropertyToID("_RadiusToScreen");

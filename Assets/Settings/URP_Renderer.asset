@@ -121,6 +121,27 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 77cd9eb76a58ce146a977457145c599b, type: 3}
   - {fileID: 2800000, guid: 1cc65d10f9d99a14ebe566125be29d24, type: 3}
   m_Shader: {fileID: 4800000, guid: d0d30405e4c3f5c45b3b20f7f76f52fd, type: 3}
+--- !u!114 &-1888180886370366353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5e054bdd8f4a679ec6cf1611263905, type: 3}
+  m_Name: GTAOFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  shader: {fileID: 4800000, guid: cb0d908d270e42a881e4dad2c4972c79, type: 3}
+  material: {fileID: 0}
+  m_Settings:
+    intensity: 1
+    radius: 5
+    maximumRadiusInPixels: 131
+    stepCount: 32
+    directionCount: 3
 --- !u!114 &-124101717157048921
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,7 +193,8 @@ MonoBehaviour:
   - {fileID: -124101717157048921}
   - {fileID: -8573823046108115447}
   - {fileID: 4915402011528432419}
-  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe090eab995da90389238b642916043744
+  - {fileID: -1888180886370366353}
+  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe090eab995da90389238b6429160437446f4c36e47cd5cbe5
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -252,17 +274,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd44fec0b8b14b919bab56f40e79b377, type: 3}
   m_Name: SSAOFeature
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   shader: {fileID: 4800000, guid: 8598a84d209d4547a9e3b5a05503f8ca, type: 3}
   material: {fileID: 0}
   m_Settings:
-    Intensity: 0.35
-    Radius: 2
     Falloff: 0
-    NUM_STEPS: 15
-    NUM_DIRECTIONS: 20
     NDotVBias: 0.1
-    RadiusToScreen: 312.94
+    Intensity: 1
+    Radius: 5
+    NUM_STEPS: 8
+    NUM_DIRECTIONS: 4
+    RadiusToScreen: 80
   blueNoise:
   - {fileID: 2800000, guid: e98034f5dc9fce64a9116b89214a59a8, type: 3}
   - {fileID: 2800000, guid: 2551b05df7c2b4b4cb7eb0df0072bcf7, type: 3}
