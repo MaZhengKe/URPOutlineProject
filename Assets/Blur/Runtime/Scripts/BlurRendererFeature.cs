@@ -68,6 +68,7 @@ namespace KuanMi.Blur
 
             m_GaussianBlurRendererPass = new GaussianBlurRendererPass()
             {
+                
                 renderPassEvent = renderPassEvent
             };
 

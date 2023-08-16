@@ -16,6 +16,7 @@ SAMPLER(sampler_BlitTexture);
 
 CBUFFER_START(ShaderVariablesAmbientOcclusion)
 
+float _Debug;
 float _AORadius;
 uint _AOStepCount;
 float _AODirectionCount;
@@ -160,7 +161,8 @@ float HorizonLoop(float3 positionVS, float3 V, float2 rayStart, float2 rayDir, f
         float currHorizon = dot(deltaPos, V) * rsqrt(deltaLenSq);
         maxHorizon = UpdateHorizon(maxHorizon, currHorizon, deltaLenSq);
 
-        t += rayStep;
+ 
+        t += rayStep ;
     }
 
     return maxHorizon;
@@ -187,12 +189,12 @@ half4 GTAO(Varyings input) : SV_Target
     // const int dirCount = 1;
 
     float3 V = normalize(-positionVS);
-    float fovCorrectedradiusSS = clamp(_AORadius *  _AOFOVCorrection  * rcp(positionVS.z), _AOStepCount,_AOMaxRadiusInPixels);
+    float fovCorrectedradiusSS = clamp(_AORadius *  _AOFOVCorrection  * rcp(positionVS.z), _AOStepCount,_AOMaxRadiusInPixels) ;
     float step = max(1, fovCorrectedradiusSS * _AOInvStepCountPlusOne);
 
     float3 bentNormal = 0;
 
-    // [unroll]
+    [loop]
     for (int i = 0; i < dirCount; ++i)
     {
         float2 dir = GetDirection(posSS, i);
@@ -215,6 +217,10 @@ half4 GTAO(Varyings input) : SV_Target
         maxHorizons.x = -GTAOFastAcos(maxHorizons.x);
         maxHorizons.y = GTAOFastAcos(maxHorizons.y);
 
+        // if(AnyIsNaN(maxHorizons) )
+        // {
+        //     return float4(0,1,0,1);
+        // }
         // return maxHorizons.x;
 
 
@@ -222,6 +228,8 @@ half4 GTAO(Varyings input) : SV_Target
         
         maxHorizons.x = N + max(maxHorizons.x - N, -HALF_PI);
         maxHorizons.y = N + min(maxHorizons.y - N, HALF_PI);
+
+        
         integral += AnyIsNaN(maxHorizons) ? 1 : IntegrateArcCosWeighted(maxHorizons.x, maxHorizons.y, N, cosN);
 
         float bentAngle = AnyIsNaN(maxHorizons)? 1: (maxHorizons.x + maxHorizons.y) * 0.5f;
@@ -234,7 +242,7 @@ half4 GTAO(Varyings input) : SV_Target
 
         // return float4(cosA, cosA, cosA, 1);
         
-        bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle) + sliceN + NN;
+        bentNormal += normalize( projNLen*( V * cos(bentAngle) - T * sin(bentAngle)) + NN);
         // bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle) + sliceN;
     }
 
@@ -245,24 +253,38 @@ half4 GTAO(Varyings input) : SV_Target
 
     if (currDepth == UNITY_RAW_FAR_CLIP_VALUE || integral < -1e-2f)
     {
-        integral = 1;
+        return float4(1, 0, 0, 1);
+        integral = 0;
     }
 
     // return float4(normalVS,1);
 
     // float3 Bent = GetNormalWS(bentNormal);
     float3 Bent = bentNormal;
-    
+
+     float3 show = GetNormalWS(bentNormal);
+//
+     if(_Debug>1)
+         show = GetNormalWS(normalVS);
+//
+//     // show = bentNormal;
+// // bentNormalWS = worldNormal;
+//     // return float4(worldNormal, 1);
+     // return float4(0.5 * (show+1), 1);
+
+    float GTAO = 1 - integral;
+    float3 reflectionDir = reflect(-V, normalVS);
+
+    // return float4(reflectionDir, 1);
+
+    float GTRO = saturate(dot(Bent, reflectionDir)) ;
+
+    // GTRO = 1 - saturate(dot(Bent, normalVS));
+
+    // integral =  GTRO;
 
 
-    // return float4(worldNormal, 1);
-    // return float4(GetNormalWS(bentNormal), 1);
-
-    float3 reflectionDir = reflect(V, normalVS);
-
-    float GTRO = saturate(dot(Bent, reflectionDir));
-
-    integral = 1 - GTRO;
+    integral = GTRO - GTAO ;
 
     return float4(integral, integral, integral, 1);
 }

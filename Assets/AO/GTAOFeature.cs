@@ -9,12 +9,14 @@ namespace AO
     public class GTAOSettings
     {
         [Range(0, 4)]
+        public float debug = 1.0f;
+        [Range(0, 4)]
         public float intensity = 1.0f;
         
         [Range(0.25f, 5f)]
         public float radius = 2.0f;
         
-        [Range(16,256)]
+        [Range(16,512)]
         public int maximumRadiusInPixels = 40;
         
         [Range(2,32)]

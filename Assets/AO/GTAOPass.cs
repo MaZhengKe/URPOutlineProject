@@ -49,7 +49,7 @@ namespace AO
             parameters.fullResolution = true;
             
             parameters.runningRes = new Vector2(width, height);
-            Debug.Log(parameters.runningRes);
+            // Debug.Log(parameters.runningRes);
             cb._AOBufferSize = new Vector4(width, height, 1.0f / width, 1.0f / height);
 
             parameters.temporalAccumulation = false;
@@ -77,7 +77,7 @@ namespace AO
                 (frameCount % 6)
             );
 
-            Debug.Log(invHalfTanFOV);
+            // Debug.Log(invHalfTanFOV);
             
             cb._AODepthToViewParams = new Vector4(
                 2.0f / (invHalfTanFOV * aspectRatio * parameters.runningRes.x),
@@ -143,12 +143,13 @@ namespace AO
 
             var para =SetPara( renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height, renderingData.cameraData.camera);
             
+            material.SetFloat("_Debug", settings.debug);
             material.SetFloat("_AORadius", settings.radius);
-            Debug.Log(settings.radius);
+            // Debug.Log(settings.radius);
             material.SetInt("_AOStepCount", settings.stepCount);
             material.SetFloat("_AODirectionCount", settings.directionCount);
             material.SetFloat("_AOInvStepCountPlusOne", 1.0f / (settings.stepCount + 1.0f));
-            Debug.Log( 1.0f / (settings.stepCount + 1.0f));
+            // Debug.Log( 1.0f / (settings.stepCount + 1.0f));
             
             material.SetInt("_AOMaxRadiusInPixels", settings.maximumRadiusInPixels);
             
@@ -159,8 +160,8 @@ namespace AO
             material.SetFloat("_AOTemporalOffsetIdx",(frameCount / 6) % 4);
             material.SetFloat("_AOTemporalRotationIdx",(frameCount / 6));
 
-            Debug.Log(para.cb._AOParams0.y);
-            Debug.Log(para.cb._AODepthToViewParams);
+            // Debug.Log(para.cb._AOParams0.y);
+            // Debug.Log(para.cb._AODepthToViewParams);
             
             
             
