@@ -75,6 +75,8 @@ float GetDepthSample(float2 positionSS, bool lowerRes)
 
 float GTAOFastAcos(float x)
 {
+
+    return acos(x);
     float outVal = -0.156583 * abs(x) + HALF_PI;
     outVal *= sqrt(1.0 - abs(x));
     return x >= 0 ? outVal : PI - outVal;
@@ -100,7 +102,7 @@ float2 GetDirection(uint2 positionSS, int offset)
     float noise = InterleavedGradientNoise(positionSS.xy, 0);
     float rotations[] = {60.0, 300.0, 180.0, 240.0, 120.0, 0.0};
 
-    float rotation = (rotations[_AOTemporalRotationIdx] / 360.0);
+    float rotation = (rotations[offset] / 360.0);
 
     noise += rotation;
     noise *= PI;
@@ -129,6 +131,13 @@ float3 GetNormalVS(float3 normalWS)
 {
     float3 normalVS = normalize(mul((float3x3)UNITY_MATRIX_V, normalWS));
     return float3(normalVS.xy, -normalVS.z);
+}
+
+float3 GetNormalWS(float3 normalVS)
+{
+    normalVS.z = -normalVS.z;
+    float3 normalWS = normalize(mul((float3x3)UNITY_MATRIX_I_V,normalVS));
+    return normalWS;
 }
 
 float HorizonLoop(float3 positionVS, float3 V, float2 rayStart, float2 rayDir, float rayOffset, float rayStep)
@@ -195,7 +204,8 @@ half4 GTAO(Varyings input) : SV_Target
 
 
         float3 sliceN = normalize(cross(float3(dir.xy, 0.0f), V.xyz));
-        float3 projN = normalVS - sliceN * dot(normalVS, sliceN);
+        float3 NN = sliceN * dot(normalVS, sliceN);
+        float3 projN = normalVS - NN;
         float projNLen = length(projN);
         float cosN = dot(projN / projNLen, V);
 
@@ -216,9 +226,16 @@ half4 GTAO(Varyings input) : SV_Target
 
         float bentAngle = AnyIsNaN(maxHorizons)? 1: (maxHorizons.x + maxHorizons.y) * 0.5f;
 
-        // bentAngle = abs(bentAngle - N);
+        // bentAngle = abs(bentAngle);
         // return float4(bentAngle, bentAngle, bentAngle, 1);
-        bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle);
+
+        // float cosA = cos(bentAngle);
+        // cosA = abs(sin(bentAngle));
+
+        // return float4(cosA, cosA, cosA, 1);
+        
+        bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle) + sliceN + NN;
+        // bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle) + sliceN;
     }
 
     bentNormal = normalize(bentNormal);
@@ -231,19 +248,21 @@ half4 GTAO(Varyings input) : SV_Target
         integral = 1;
     }
 
-    return float4(bentNormal,1);
+    // return float4(normalVS,1);
 
-    float3 Bent = TransformViewToWorldNormal(bentNormal);
+    // float3 Bent = GetNormalWS(bentNormal);
+    float3 Bent = bentNormal;
     
 
 
-    // return float4(Bent, 1);
+    // return float4(worldNormal, 1);
+    // return float4(GetNormalWS(bentNormal), 1);
 
-    float3 reflectionDir = reflect(V, worldNormal);
+    float3 reflectionDir = reflect(V, normalVS);
 
     float GTRO = saturate(dot(Bent, reflectionDir));
 
-    integral = GTRO;
+    integral = 1 - GTRO;
 
     return float4(integral, integral, integral, 1);
 }
