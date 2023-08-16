@@ -145,6 +145,41 @@ const float _NegInvR2 = -1.0 / 0.24;
 #define unity_eyeIndex 0
 
 
+// This returns a vector in world unit (not a position), from camera to the given point described by uv screen coordinate and depth (in absolute world unit).
+half3 ReconstructViewPos(float2 uv, float linearDepth)
+{
+
+    half3 camTransform000102 = half3(_CameraViewProjections[unity_eyeIndex]._m00, _CameraViewProjections[unity_eyeIndex]._m01, _CameraViewProjections[unity_eyeIndex]._m02);
+    half3 camTransform101112 = half3(_CameraViewProjections[unity_eyeIndex]._m10, _CameraViewProjections[unity_eyeIndex]._m11, _CameraViewProjections[unity_eyeIndex]._m12);
+
+
+    
+    
+    #if defined(_FOVEATED_RENDERING_NON_UNIFORM_RASTER)
+    uv = RemapFoveatedRenderingNonUniformToLinear(uv);
+    #endif
+
+    // Screen is y-inverted.
+    uv.y = 1.0 - uv.y;
+
+    // view pos in world space
+    #if defined(_ORTHOGRAPHIC)
+    float zScale = linearDepth * _ProjectionParams.w; // divide by far plane
+    float3 viewPos = _CameraViewTopLeftCorner[unity_eyeIndex].xyz
+                        + _CameraViewXExtent[unity_eyeIndex].xyz * uv.x
+                        + _CameraViewYExtent[unity_eyeIndex].xyz * uv.y
+                        + _CameraViewZExtent[unity_eyeIndex].xyz * zScale;
+    #else
+    float zScale = linearDepth * _ProjectionParams2.x; // divide by near plane
+    float3 viewPos = _CameraViewTopLeftCorner[unity_eyeIndex].xyz
+                        + _CameraViewXExtent[unity_eyeIndex].xyz * uv.x
+                        + _CameraViewYExtent[unity_eyeIndex].xyz * uv.y;
+    viewPos *= zScale;
+    #endif
+
+    return half3(viewPos);
+}
+
 half4 PackAONormal(half ao, half3 n)
 {
     n *= HALF_HALF;

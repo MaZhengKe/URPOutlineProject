@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace KuanMi.VolumetricLighting.Editor
+namespace KuanMi.VolumetricLighting
 {
     using UnityEditor;
 

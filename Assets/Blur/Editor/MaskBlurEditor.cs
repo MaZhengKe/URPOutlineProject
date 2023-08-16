@@ -1,9 +1,8 @@
 ﻿using KuanMi.Blur;
 using UnityEditor;
 using UnityEditor.Rendering;
-using UnityEngine.Rendering.Universal;
 
-namespace Blur.Editor
+namespace Blur
 {
     
     [CustomEditor(typeof(MaskBlur))]

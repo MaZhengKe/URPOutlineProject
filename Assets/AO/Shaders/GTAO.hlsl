@@ -22,6 +22,9 @@ float _AODirectionCount;
 int _AOMaxRadiusInPixels;
 float4 _AODepthToViewParams;
 float _AOFOVCorrection;
+float _AOInvStepCountPlusOne;
+float _AOTemporalOffsetIdx;
+float _AOTemporalRotationIdx;
 
 CBUFFER_END
 
@@ -29,9 +32,9 @@ CBUFFER_END
 // #define _AOFOVCorrection _AOParams0.y
 #define _AOIntensity _AOParams1.x
 #define _AOInvRadiusSq _AOParams1.y
-#define _AOTemporalOffsetIdx _AOParams1.z
-#define _AOTemporalRotationIdx _AOParams1.w
-#define _AOInvStepCountPlusOne _AOParams2.z
+// #define _AOTemporalOffsetIdx _AOParams1.z
+// #define _AOTemporalRotationIdx _AOParams1.w
+// #define _AOInvStepCountPlusOne _AOParams2.z
 #define _AOHistorySize _AOParams2.xy
 #define _FirstDepthMipOffset _FirstTwoDepthMipOffsets.xy
 #define _SecondDepthMipOffset _FirstTwoDepthMipOffsets.zw
@@ -50,15 +53,6 @@ CBUFFER_END
 #define SAMPLE_BASEMAP_R(uv)        half(SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_BlitTexture, UnityStereoTransformScreenSpaceTex(uv)).r);
 #define SAMPLE_BLUE_NOISE(uv)       SAMPLE_TEXTURE2D(_BlueNoiseTexture, sampler_PointRepeat, UnityStereoTransformScreenSpaceTex(uv)).r;
 
-
-
-float3 GetPositionVS(float2 positionSS, float depth)
-{
-    float linearDepth = LinearEyeDepth(depth, _ZBufferParams);
-    return float3((positionSS * _AODepthToViewParams.xy - _AODepthToViewParams.zw) * linearDepth, linearDepth);
-}
-
-
 float SampleDepth(float2 uv)
 {
     return SampleSceneDepth(uv.xy);
@@ -67,32 +61,6 @@ float SampleDepth(float2 uv)
 half3 SampleNormal(float2 uv)
 {
     return half3(SampleSceneNormals(uv));
-}
-
-// float3 GetPositionVS(float2 positionSS, float depth)
-// {
-//     return ComputeViewSpacePosition(positionSS / _ScreenParams.xy, depth, UNITY_MATRIX_I_P);
-// }
-
-float2 GetDirection(uint2 positionSS, int offset)
-{
-    float noise = InterleavedGradientNoise(positionSS.xy, 0);
-    float rotations[] = {60.0, 300.0, 180.0, 240.0, 120.0, 0.0};
-
-    float rotation = (rotations[offset] / 360.0);
-
-    noise += rotation;
-    noise *= PI;
-
-    return float2(cos(noise), sin(noise));
-}
-
-float GetOffset(uint2 positionSS)
-{
-    // Spatial offset
-    float offset = 0.25 * ((positionSS.y - positionSS.x) & 0x3);
-
-    return frac(offset);
 }
 
 float GetDepthForCentral(float2 positionSS)
@@ -105,12 +73,62 @@ float GetDepthSample(float2 positionSS, bool lowerRes)
     return GetDepthForCentral(positionSS);
 }
 
+float GTAOFastAcos(float x)
+{
+    float outVal = -0.156583 * abs(x) + HALF_PI;
+    outVal *= sqrt(1.0 - abs(x));
+    return x >= 0 ? outVal : PI - outVal;
+}
+
+float IntegrateArcCosWeighted(float horzion1, float horizon2, float n, float cosN)
+{
+    float h1 = horzion1 * 2.0;
+    float h2 = horizon2 * 2.0;
+    float sinN = sin(n);
+    return 0.25 * ((-cos(h1 - n) + cosN + h1 * sinN) + (-cos(h2 - n) + cosN + h2 * sinN));
+}
+
 float UpdateHorizon(float maxH, float candidateH, float distSq)
 {
     float falloff = saturate((1.0 - (distSq * 1 / (_AORadius * _AORadius))));
 
     return (candidateH > maxH) ? lerp(maxH, candidateH, falloff) : lerp(maxH, candidateH, 0.03f);
-    // TODO: Thickness heuristic here.
+}
+
+float2 GetDirection(uint2 positionSS, int offset)
+{
+    float noise = InterleavedGradientNoise(positionSS.xy, 0);
+    float rotations[] = {60.0, 300.0, 180.0, 240.0, 120.0, 0.0};
+
+    float rotation = (rotations[_AOTemporalRotationIdx] / 360.0);
+
+    noise += rotation;
+    noise *= PI;
+
+    return float2(cos(noise), sin(noise));
+}
+
+float GetOffset(uint2 positionSS)
+{
+    // Spatial offset
+    float offset = 0.25 * ((positionSS.y - positionSS.x) & 0x3);
+    
+    float offsets[] = { 0.0, 0.5, 0.25, 0.75 };
+    offset += offsets[_AOTemporalOffsetIdx];
+
+    return frac(offset);
+}
+
+float3 GetPositionVS(float2 positionSS, float depth)
+{
+    float linearDepth = LinearEyeDepth(depth, _ZBufferParams);
+    return float3((positionSS * _AODepthToViewParams.xy - _AODepthToViewParams.zw) * linearDepth, linearDepth);
+}
+
+float3 GetNormalVS(float3 normalWS)
+{
+    float3 normalVS = normalize(mul((float3x3)UNITY_MATRIX_V, normalWS));
+    return float3(normalVS.xy, -normalVS.z);
 }
 
 float HorizonLoop(float3 positionVS, float3 V, float2 rayStart, float2 rayDir, float rayOffset, float rayStep)
@@ -139,68 +157,33 @@ float HorizonLoop(float3 positionVS, float3 V, float2 rayStart, float2 rayDir, f
     return maxHorizon;
 }
 
-
-float GTAOFastAcos(float x)
-{
-    float outVal = -0.156583 * abs(x) + HALF_PI;
-    outVal *= sqrt(1.0 - abs(x));
-    return x >= 0 ? outVal : PI - outVal;
-}
-
-
-float IntegrateArcCosWeighted(float horzion1, float horizon2, float n, float cosN)
-{
-    float h1 = horzion1 * 2.0;
-    float h2 = horizon2 * 2.0;
-    float sinN = sin(n);
-    return 0.25 * ((-cos(h1 - n) + cosN + h1 * sinN) + (-cos(h2 - n) + cosN + h2 * sinN));
-}
-
-
-float3 GetNormalVS(float3 normalWS)
-{
-    float3 normalVS = normalize(mul((float3x3)UNITY_MATRIX_V, normalWS));
-    return float3(normalVS.xy, -normalVS.z);
-}
-
 half4 GTAO(Varyings input) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-
 
     float2 uv = input.texcoord;
     float2 posSS = uv * _ScreenParams.xy;
 
     float currDepth = GetDepthForCentral(posSS);
-
-    // return float4(currDepth, currDepth, currDepth, 1);
     float3 positionVS = GetPositionVS(posSS, currDepth);
-    // return float4(positionVS, 1);
 
     float3 worldNormal = SampleNormal(uv);
     float3 normalVS = GetNormalVS(worldNormal);
 
     float offset = GetOffset(posSS);
-    // offset = 0;
-
-    // return float4(offset, offset, offset, 1);
     float2 rayStart = posSS;
-    // return float4(rayStart / _ScreenParams.xy, 0, 1);
     float integral = 0;
 
     const int dirCount = _AODirectionCount;
+    // const int dirCount = 1;
 
     float3 V = normalize(-positionVS);
-    // return float4(positionVS, 1);
-    float fovCorrectedradiusSS = clamp(_AORadius *  _AOFOVCorrection  * 0.25f * rcp(positionVS.z), _AOStepCount,_AOMaxRadiusInPixels);
+    float fovCorrectedradiusSS = clamp(_AORadius *  _AOFOVCorrection  * rcp(positionVS.z), _AOStepCount,_AOMaxRadiusInPixels);
+    float step = max(1, fovCorrectedradiusSS * _AOInvStepCountPlusOne);
 
-    fovCorrectedradiusSS = _AOMaxRadiusInPixels / positionVS.z;
-    // fovCorrectedradiusSS /= _RadiusToScreen;
-    // return float4(fovCorrectedradiusSS,fovCorrectedradiusSS,fovCorrectedradiusSS, 1);
+    float3 bentNormal = 0;
 
-    float step = max(1, fovCorrectedradiusSS * (1 / _AOStepCount + 1));
-
-    [unroll]
+    // [unroll]
     for (int i = 0; i < dirCount; ++i)
     {
         float2 dir = GetDirection(posSS, i);
@@ -216,26 +199,51 @@ half4 GTAO(Varyings input) : SV_Target
         float projNLen = length(projN);
         float cosN = dot(projN / projNLen, V);
 
-
         float3 T = cross(V, sliceN);
         float N = -sign(dot(projN, T)) * GTAOFastAcos(cosN);
 
         maxHorizons.x = -GTAOFastAcos(maxHorizons.x);
         maxHorizons.y = GTAOFastAcos(maxHorizons.y);
+
+        // return maxHorizons.x;
+
+
+        // return bentAngle;
+        
         maxHorizons.x = N + max(maxHorizons.x - N, -HALF_PI);
         maxHorizons.y = N + min(maxHorizons.y - N, HALF_PI);
-
-
         integral += AnyIsNaN(maxHorizons) ? 1 : IntegrateArcCosWeighted(maxHorizons.x, maxHorizons.y, N, cosN);
+
+        float bentAngle = AnyIsNaN(maxHorizons)? 1: (maxHorizons.x + maxHorizons.y) * 0.5f;
+
+        // bentAngle = abs(bentAngle - N);
+        // return float4(bentAngle, bentAngle, bentAngle, 1);
+        bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle);
     }
 
+    bentNormal = normalize(bentNormal);
+
+    // bentNormal = normalize(normalize(bentNormal));
     integral /= dirCount;
 
+    if (currDepth == UNITY_RAW_FAR_CLIP_VALUE || integral < -1e-2f)
+    {
+        integral = 1;
+    }
 
-    // if (currDepth == UNITY_RAW_FAR_CLIP_VALUE || integral < -1e-2f)
-    // {
-    //     integral = 1;
-    // }
+    return float4(bentNormal,1);
+
+    float3 Bent = TransformViewToWorldNormal(bentNormal);
+    
+
+
+    // return float4(Bent, 1);
+
+    float3 reflectionDir = reflect(V, worldNormal);
+
+    float GTRO = saturate(dot(Bent, reflectionDir));
+
+    integral = GTRO;
 
     return float4(integral, integral, integral, 1);
 }

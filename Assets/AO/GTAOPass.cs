@@ -41,12 +41,15 @@ namespace AO
 
         public RenderAOParameters SetPara(float width, float height,Camera camera)
         {
+
+            
             var parameters = new RenderAOParameters();
             ref var cb = ref parameters.cb;
             
             parameters.fullResolution = true;
             
             parameters.runningRes = new Vector2(width, height);
+            Debug.Log(parameters.runningRes);
             cb._AOBufferSize = new Vector4(width, height, 1.0f / width, 1.0f / height);
 
             parameters.temporalAccumulation = false;
@@ -55,7 +58,8 @@ namespace AO
             parameters.viewCount = 0;
             parameters.runAsync = false;
             
-            float invHalfTanFOV = -camera.projectionMatrix[1, 1];
+            // HDRP中使用的GPU矩阵
+            float invHalfTanFOV = camera.projectionMatrix[1, 1];
             float aspectRatio = parameters.runningRes.y / parameters.runningRes.x;
             uint frameCount = 0;
             
@@ -72,6 +76,8 @@ namespace AO
                 (frameCount / 6) % 4,
                 (frameCount % 6)
             );
+
+            Debug.Log(invHalfTanFOV);
             
             cb._AODepthToViewParams = new Vector4(
                 2.0f / (invHalfTanFOV * aspectRatio * parameters.runningRes.x),
@@ -138,12 +144,23 @@ namespace AO
             var para =SetPara( renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height, renderingData.cameraData.camera);
             
             material.SetFloat("_AORadius", settings.radius);
+            Debug.Log(settings.radius);
             material.SetInt("_AOStepCount", settings.stepCount);
             material.SetFloat("_AODirectionCount", settings.directionCount);
+            material.SetFloat("_AOInvStepCountPlusOne", 1.0f / (settings.stepCount + 1.0f));
+            Debug.Log( 1.0f / (settings.stepCount + 1.0f));
+            
             material.SetInt("_AOMaxRadiusInPixels", settings.maximumRadiusInPixels);
             
             material.SetFloat("_AOFOVCorrection", para.cb._AOParams0.y);
             material.SetVector("_AODepthToViewParams", para.cb._AODepthToViewParams);
+
+            float frameCount = Time.frameCount;
+            material.SetFloat("_AOTemporalOffsetIdx",(frameCount / 6) % 4);
+            material.SetFloat("_AOTemporalRotationIdx",(frameCount / 6));
+
+            Debug.Log(para.cb._AOParams0.y);
+            Debug.Log(para.cb._AODepthToViewParams);
             
             
             
