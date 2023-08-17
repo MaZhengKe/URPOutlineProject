@@ -135,14 +135,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   shader: {fileID: 4800000, guid: cb0d908d270e42a881e4dad2c4972c79, type: 3}
+  GaussianBlurShader: {fileID: 4800000, guid: d69164b9146645fc97bae149c19e2050, type: 3}
   material: {fileID: 0}
   m_Settings:
-    debug: 0
-    intensity: 4
-    radius: 1.52
-    maximumRadiusInPixels: 512
-    stepCount: 32
-    directionCount: 1
+    debug: 4
+    intensity: 1
+    radius: 1
+    maximumRadiusInPixels: 256
+    stepCount: 8
+    directionCount: 6
+  gaussianBlur:
+    BlurRadius: 1
+    Iteration: 1
+    DownSample: 1
 --- !u!114 &-124101717157048921
 MonoBehaviour:
   m_ObjectHideFlags: 0

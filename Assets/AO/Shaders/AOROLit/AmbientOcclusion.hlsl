@@ -17,6 +17,7 @@ struct AmbientOcclusionFactor
 {
     half indirectAmbientOcclusion;
     half directAmbientOcclusion;
+    half ro;
 };
 
 half SampleAmbientOcclusion(float2 normalizedScreenSpaceUV)
@@ -25,23 +26,25 @@ half SampleAmbientOcclusion(float2 normalizedScreenSpaceUV)
     return half(SAMPLE_TEXTURE2D_X(_ScreenSpaceOcclusionTexture, sampler_ScreenSpaceOcclusionTexture, uv).x);
 }
 
-half SampleGTAmbientOcclusion(float2 normalizedScreenSpaceUV)
+half2 SampleGTAmbientOcclusion(float2 normalizedScreenSpaceUV)
 {
     float2 uv = UnityStereoTransformScreenSpaceTex(normalizedScreenSpaceUV);
-    return half(SAMPLE_TEXTURE2D_X(_GTAO, sampler_GTAO, uv).x);
+    return half2(SAMPLE_TEXTURE2D_X(_GTAO, sampler_GTAO, uv).xy);
 }
 
 AmbientOcclusionFactor GetScreenSpaceAmbientOcclusion(float2 normalizedScreenSpaceUV)
 {
     AmbientOcclusionFactor aoFactor;
+    aoFactor.ro = 1;
 
     #if defined(_SCREEN_SPACE_OCCLUSION) && !defined(_SURFACE_TYPE_TRANSPARENT)
 
     
-    float ssao = SampleGTAmbientOcclusion(normalizedScreenSpaceUV);
+    float2 ssao = SampleGTAmbientOcclusion(normalizedScreenSpaceUV);
 
-    aoFactor.indirectAmbientOcclusion = ssao ;
-    aoFactor.directAmbientOcclusion = lerp(half(1.0), ssao, _AmbientOcclusionParam.w);
+    aoFactor.indirectAmbientOcclusion = ssao.x ;
+    aoFactor.directAmbientOcclusion = lerp(half(1.0), ssao.x, _AmbientOcclusionParam.w);
+    aoFactor.ro = ssao.y; 
 
     
     #else

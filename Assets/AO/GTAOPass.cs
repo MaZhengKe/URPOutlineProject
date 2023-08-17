@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using KuanMi.Blur;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -40,11 +41,15 @@ namespace AO
 
             public ShaderVariablesAmbientOcclusion cb;
         }
+        
+        public GTAOPass()
+        {
+            gaussianSetting = new GaussianSetting();
+            gaussianBlurTool = new GaussianBlurTool(this, gaussianSetting);
+        }
 
         public RenderAOParameters SetPara(float width, float height,Camera camera)
         {
-
-            
             var parameters = new RenderAOParameters();
             ref var cb = ref parameters.cb;
             
@@ -138,8 +143,11 @@ namespace AO
 
 
         protected RTHandle m_TargetTexture;
+        protected RTHandle m_GTAOTexture;
         
         protected RenderTextureDescriptor descriptor;
+        
+        RenderAOParameters para;
         
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
@@ -150,9 +158,14 @@ namespace AO
             descriptor = cameraTargetDescriptor;
             descriptor.depthBufferBits = 0;
             descriptor.msaaSamples = 1;
+            
+            gaussianBlurTool.OnCameraSetup(descriptor);
 
             RenderingUtils.ReAllocateIfNeeded(ref m_TargetTexture, descriptor, FilterMode.Bilinear,
                 TextureWrapMode.Clamp, name: TargetTextureName);
+            
+            RenderingUtils.ReAllocateIfNeeded(ref m_GTAOTexture, descriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name: "tmp");
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -160,34 +173,42 @@ namespace AO
             
             var cmd = CommandBufferPool.Get();
 
-            var para =SetPara( renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height, renderingData.cameraData.camera);
+            para =SetPara( renderingData.cameraData.cameraTargetDescriptor.width, renderingData.cameraData.cameraTargetDescriptor.height, renderingData.cameraData.camera);
             
             material.SetFloat("_Debug", settings.debug);
             material.SetFloat("_AORadius", settings.radius);
             material.SetFloat("_AOIntensity", settings.intensity);
             // Debug.Log(settings.radius);
-            material.SetInt("_AOStepCount", settings.stepCount);
+            material.SetFloat("_AOStepCount", settings.stepCount);
             material.SetFloat("_AODirectionCount", settings.directionCount);
             material.SetFloat("_AOInvStepCountPlusOne", 1.0f / (settings.stepCount + 1.0f));
             // Debug.Log( 1.0f / (settings.stepCount + 1.0f));
             
-            material.SetInt("_AOMaxRadiusInPixels", settings.maximumRadiusInPixels);
+            
+            
+            float scaleFactor = (renderingData.cameraData.cameraTargetDescriptor.width * renderingData.cameraData.cameraTargetDescriptor.height) / (540.0f * 960.0f);
+            float radInPixels = Mathf.Max(16, settings.maximumRadiusInPixels * Mathf.Sqrt(scaleFactor));
+            
+            
+            material.SetFloat("_AOMaxRadiusInPixels", radInPixels);
             
             material.SetFloat("_AOFOVCorrection", para.cb._AOParams0.y);
             material.SetVector("_AODepthToViewParams", para.cb._AODepthToViewParams);
 
             float frameCount = Time.frameCount;
             material.SetFloat("_AOTemporalOffsetIdx",(frameCount / 6) % 4);
-            material.SetFloat("_AOTemporalRotationIdx",(frameCount / 6));
+            material.SetFloat("_AOTemporalRotationIdx",(frameCount % 6));
 
             // Debug.Log(para.cb._AOParams0.y);
             // Debug.Log(para.cb._AODepthToViewParams);
 
             using (new ProfilingScope(cmd, ProfilingSampler.Get(ProfileId)))
             {
-                CoreUtils.SetRenderTarget(cmd, m_TargetTexture, ClearFlag.Color, Color.black);
+                CoreUtils.SetRenderTarget(cmd, m_GTAOTexture, ClearFlag.Color, Color.black);
                 // CoreUtils.DrawFullScreen(cmd,material);
                 Blitter.BlitTexture(cmd, Texture2D.blackTexture, Vector2.one, material, 0);
+                
+                gaussianBlurTool.Execute(cmd,m_GTAOTexture,m_TargetTexture);
                 
                 cmd.SetGlobalTexture(TargetTextureName, m_TargetTexture);
                 CoreUtils.SetRenderTarget(cmd, m_Renderer.cameraColorTargetHandle,m_Renderer.cameraDepthTargetHandle);
@@ -198,12 +219,26 @@ namespace AO
             
         }
 
-        public void Setup(ScriptableRenderer renderer, Material material, GTAOSettings GTAOSettings)
+        private GaussianBlurTool gaussianBlurTool;
+        
+        Material blurMaterial;
+        private GaussianSetting gaussianSetting;
+
+        public void Setup(ScriptableRenderer renderer, Material material, Material gaussianBlurMaterial,
+            GTAOSettings GTAOSettings, GaussianSetting gaussianSetting)
         {
             
             this.m_Renderer = renderer;
             this.material = material;
             this.settings = GTAOSettings;
+            
+            
+            this.blurMaterial = gaussianBlurMaterial;
+            this.gaussianSetting = gaussianSetting;
+            
+            gaussianBlurTool.m_Material = gaussianBlurMaterial;
+            gaussianBlurTool.setting = gaussianSetting;
+            
             ConfigureInput(ScriptableRenderPassInput.Normal);
             
         }
@@ -211,7 +246,10 @@ namespace AO
 
         public void Dispose()
         {
+            gaussianBlurTool.Dispose();
+            gaussianBlurTool = null;
             m_TargetTexture?.Release();
+            m_GTAOTexture?.Release();
         }
     }
 }

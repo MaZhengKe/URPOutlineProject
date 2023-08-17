@@ -1,4 +1,5 @@
 ﻿using System;
+using KuanMi.Blur;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -29,45 +30,77 @@ namespace AO
     public class GTAOFeature : ScriptableRendererFeature
     {
         [Reload("Shaders/GTAO.shader")] public Shader shader;
+        
+        [SerializeField] [HideInInspector] [Reload("Shaders/GaussianBlur.shader")]
+        public Shader GaussianBlurShader;
 
         public Material material;
         public GTAOPass GTAOPass;
         
         public GTAOSettings m_Settings = new GTAOSettings();
 
+        
+        public GaussianSetting gaussianBlur;
+        
+        
         internal ref GTAOSettings settings => ref m_Settings;
 
         public override void Create()
         {
 
-
 #if UNITY_EDITOR
             ResourceReloader.TryReloadAllNullIn(this, "Assets/AO");
 #endif
 
-            material = CoreUtils.CreateEngineMaterial(shader);
 
-            GTAOPass = new GTAOPass()
+            if (GTAOPass == null)
             {
-                renderPassEvent = RenderPassEvent.BeforeRenderingOpaques
-            };
-
-
+                GTAOPass = new GTAOPass()
+                {
+                    renderPassEvent = RenderPassEvent.BeforeRenderingOpaques
+                };
+            }
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            GTAOPass.Setup(renderer, material,settings);
+            
+            if (!GetMaterials())
+            {
+                {
+                    Debug.LogErrorFormat("{0}.AddRenderPasses(): Missing material. {1} render pass will not be added.",
+                        GetType().Name, name);
+                    return;
+                }
+            }
+            GTAOPass.Setup(renderer, material,GaussianBlurMaterial,settings,gaussianBlur);
             renderer.EnqueuePass(GTAOPass);
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+            
             CoreUtils.Destroy(material);
             material = null;
             
+            CoreUtils.Destroy(GaussianBlurMaterial);
+            GaussianBlurMaterial = null;
+            
             GTAOPass.Dispose();
+            GTAOPass = null;
+        }
+        
+        private Material GaussianBlurMaterial;
+        private bool GetMaterials()
+        {
+            if (GaussianBlurMaterial == null && GaussianBlurShader != null)
+                GaussianBlurMaterial = CoreUtils.CreateEngineMaterial(GaussianBlurShader);
+            
+            if (material == null && shader != null)
+                material = CoreUtils.CreateEngineMaterial(shader);
+            
+            return GaussianBlurMaterial != null;
         }
 
         public enum ProfileId

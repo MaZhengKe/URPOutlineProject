@@ -4,7 +4,7 @@
 #include "AmbientOcclusion.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/BRDF.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Debug/Debugging3D.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GlobalIllumination.hlsl"
+#include "GlobalIllumination.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RealtimeLights.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 
@@ -283,7 +283,7 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     LightingData lightingData = CreateLightingData(inputData, surfaceData);
 
     lightingData.giColor = GlobalIllumination(brdfData, brdfDataClearCoat, surfaceData.clearCoatMask,
-                                              inputData.bakedGI, aoFactor.indirectAmbientOcclusion, inputData.positionWS,
+                                              inputData.bakedGI, aoFactor.indirectAmbientOcclusion, aoFactor.ro,inputData.positionWS,
                                               inputData.normalWS, inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV);
 #ifdef _LIGHT_LAYERS
     if (IsMatchingLightLayer(mainLight.layerMask, meshRenderingLayers))

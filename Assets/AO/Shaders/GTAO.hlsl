@@ -103,7 +103,7 @@ float2 GetDirection(uint2 positionSS, int offset)
     float noise = InterleavedGradientNoise(positionSS.xy, 0);
     float rotations[] = {60.0, 300.0, 180.0, 240.0, 120.0, 0.0};
 
-    float rotation = (rotations[ (_AOTemporalRotationIdx)%6] / 360.0);
+    float rotation = (rotations[ (_AOTemporalRotationIdx + offset)%6] / 360.0);
 
     noise += rotation;
     noise *= PI;
@@ -264,6 +264,9 @@ half4 GTAO(Varyings input) : SV_Target
     float3 normalVS = GetNormalVS(normalWS);
 
     float offset = GetOffset(posSS);
+
+    // return pow( abs( offset), 1/2.2f);
+    // return  pow(0.5,1/2.2f);
     float2 rayStart = posSS;
     float integral = 0;
 
@@ -271,10 +274,13 @@ half4 GTAO(Varyings input) : SV_Target
     // const int dirCount = 1;
 
     float3 V = normalize(-positionVS);
-    float fovCorrectedradiusSS = clamp(_AORadius * _AOFOVCorrection * rcp(positionVS.z), _AOStepCount,
-                                       _AOMaxRadiusInPixels);
+    float vv = _AOStepCount;
+    float fovCorrectedradiusSS = clamp(_AORadius * _AOFOVCorrection * rcp(positionVS.z), vv, _AOMaxRadiusInPixels);
+    // float v = _AORadius * _AOFOVCorrection * rcp(positionVS.z);
     float step = max(1, fovCorrectedradiusSS * _AOInvStepCountPlusOne);
-
+    
+    // return pow( (float)_AOMaxRadiusInPixels/1000, 1/2.2f);
+    
     float3 bentNormal = 0;
 
     [loop]
@@ -304,14 +310,12 @@ half4 GTAO(Varyings input) : SV_Target
         // {
         //     return float4(0,1,0,1);
         // }
-        // return maxHorizons.x;
-
+        // return pow( abs( maxHorizons.x), 1/2.2f);
 
         // return bentAngle;
 
         maxHorizons.x = N + max(maxHorizons.x - N, -HALF_PI);
         maxHorizons.y = N + min(maxHorizons.y - N, HALF_PI);
-
 
         integral += AnyIsNaN(maxHorizons) ? 1 : IntegrateArcCosWeighted(maxHorizons.x, maxHorizons.y, N, cosN);
 
@@ -364,7 +368,7 @@ half4 GTAO(Varyings input) : SV_Target
     // bentNormal.z = -bentNormal.z;
     // normalVS.z = -normalVS.z;
 
-    float GTRO = GetSpecularOcclusionFromBentAO(V, bentNormal, normalVS, GTAO, 0.5f);
+    float GTRO = GetSpecularOcclusionFromBentAO(V, bentNormal, normalVS,  1, 1);
 
 
     // ro = GTAO;
@@ -375,6 +379,10 @@ half4 GTAO(Varyings input) : SV_Target
 
     GTAO = 1 - _AOIntensity*(1 - GTAO);
     GTAO = saturate(GTAO);
+
+    // GTAO = pow(GTAO, 1 / 2.2f);
+
+    GTRO = pow(GTRO,_Debug);
 
     return float4(GTAO, GTRO, 0, 1);
 }
