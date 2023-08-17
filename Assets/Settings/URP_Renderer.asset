@@ -137,9 +137,9 @@ MonoBehaviour:
   shader: {fileID: 4800000, guid: cb0d908d270e42a881e4dad2c4972c79, type: 3}
   material: {fileID: 0}
   m_Settings:
-    debug: 0.65
-    intensity: 0
-    radius: 1.68
+    debug: 0
+    intensity: 4
+    radius: 1.52
     maximumRadiusInPixels: 512
     stepCount: 32
     directionCount: 1
