@@ -26,12 +26,13 @@ float _AOFOVCorrection;
 float _AOInvStepCountPlusOne;
 float _AOTemporalOffsetIdx;
 float _AOTemporalRotationIdx;
+float _AOIntensity;
 
 CBUFFER_END
 
 #define _AOBaseResMip  (int)_AOParams0.x
 // #define _AOFOVCorrection _AOParams0.y
-#define _AOIntensity _AOParams1.x
+// #define _AOIntensity _AOParams1.x
 #define _AOInvRadiusSq _AOParams1.y
 // #define _AOTemporalOffsetIdx _AOParams1.z
 // #define _AOTemporalRotationIdx _AOParams1.w
@@ -76,7 +77,6 @@ float GetDepthSample(float2 positionSS, bool lowerRes)
 
 float GTAOFastAcos(float x)
 {
-
     return acos(x);
     float outVal = -0.156583 * abs(x) + HALF_PI;
     outVal *= sqrt(1.0 - abs(x));
@@ -103,7 +103,7 @@ float2 GetDirection(uint2 positionSS, int offset)
     float noise = InterleavedGradientNoise(positionSS.xy, 0);
     float rotations[] = {60.0, 300.0, 180.0, 240.0, 120.0, 0.0};
 
-    float rotation = (rotations[offset] / 360.0);
+    float rotation = (rotations[ (_AOTemporalRotationIdx)%6] / 360.0);
 
     noise += rotation;
     noise *= PI;
@@ -115,8 +115,8 @@ float GetOffset(uint2 positionSS)
 {
     // Spatial offset
     float offset = 0.25 * ((positionSS.y - positionSS.x) & 0x3);
-    
-    float offsets[] = { 0.0, 0.5, 0.25, 0.75 };
+
+    float offsets[] = {0.0, 0.5, 0.25, 0.75};
     offset += offsets[_AOTemporalOffsetIdx];
 
     return frac(offset);
@@ -137,7 +137,7 @@ float3 GetNormalVS(float3 normalWS)
 float3 GetNormalWS(float3 normalVS)
 {
     normalVS.z = -normalVS.z;
-    float3 normalWS = normalize(mul((float3x3)UNITY_MATRIX_I_V,normalVS));
+    float3 normalWS = normalize(mul((float3x3)UNITY_MATRIX_I_V, normalVS));
     return normalWS;
 }
 
@@ -161,11 +161,93 @@ float HorizonLoop(float3 positionVS, float3 V, float2 rayStart, float2 rayDir, f
         float currHorizon = dot(deltaPos, V) * rsqrt(deltaLenSq);
         maxHorizon = UpdateHorizon(maxHorizon, currHorizon, deltaLenSq);
 
- 
-        t += rayStep ;
+
+        t += rayStep;
     }
 
     return maxHorizon;
+}
+
+// Based on Oat and Sander's 2007 technique
+// Area/solidAngle of intersection of two cone
+real SphericalCapIntersectionSolidArea(real cosC1, real cosC2, real cosB)
+{
+    real r1 = FastACos(cosC1);
+    real r2 = FastACos(cosC2);
+    real rd = FastACos(cosB);
+    real area = 0.0;
+
+    if (rd <= max(r1, r2) - min(r1, r2))
+    {
+        // One cap is completely inside the other
+        area = TWO_PI - TWO_PI * max(cosC1, cosC2);
+    }
+    else if (rd >= r1 + r2)
+    {
+        // No intersection exists
+        area = 0.0;
+    }
+    else
+    {
+        real diff = abs(r1 - r2);
+        real den = r1 + r2 - diff;
+        real x = 1.0 - saturate((rd - diff) / max(den, 0.0001));
+        area = smoothstep(0.0, 1.0, x);
+        area *= TWO_PI - TWO_PI * max(cosC1, cosC2);
+    }
+
+    return area;
+}
+
+real GetSpecularOcclusionFromBentAO_ConeCone(real3 V, real3 bentNormalWS, real3 normalWS, real ambientOcclusion,
+                                             real roughness)
+{
+    // Retrieve cone angle
+    // Ambient occlusion is cosine weighted, thus use following equation. See slide 129
+    real cosAv = sqrt(1.0 - ambientOcclusion);
+    roughness = max(roughness, 0.01); // Clamp to 0.01 to avoid edge cases
+    real cosAs = exp2((-log(10.0) / log(2.0)) * Sq(roughness));
+    real cosB = dot(bentNormalWS, reflect(-V, normalWS));
+    return SphericalCapIntersectionSolidArea(cosAv, cosAs, cosB) / (TWO_PI * (1.0 - cosAs));
+}
+
+real GetSpecularOcclusionFromBentAO(real3 V, real3 bentNormalWS, real3 normalWS, real ambientOcclusion, real roughness)
+{
+    // Pseudo code:
+    //SphericalGaussian NDF = WarpedGGXDistribution(normalWS, roughness, V);
+    //SphericalGaussian Visibility = VisibilityConeSG(bentNormalWS, ambientOcclusion);
+    //SphericalGaussian UpperHemisphere = UpperHemisphereSG(normalWS);
+    //return saturate( InnerProduct(NDF, Visibility) / InnerProduct(NDF, UpperHemisphere) );
+
+    // 1. Approximate visibility cone with a spherical gaussian of amplitude A=1
+    // For a cone angle X, we can determine sharpness so that all point inside the cone have a value > Y
+    // sharpness = (log(Y) - log(A)) / (cos(X) - 1)
+    // For AO cone, cos(X) = sqrt(1 - ambientOcclusion)
+    // -> for Y = 0.1, sharpness = -1.0 / (sqrt(1-ao) - 1)
+    float vs = -1.0f / min(sqrt(1.0f - ambientOcclusion) - 1.0f, -0.001f);
+
+    // 2. Approximate upper hemisphere with sharpness = 0.8 and amplitude = 1
+    float us = 0.8f;
+
+    // 3. Compute warped SG Axis of GGX distribution
+    // Ref: All-Frequency Rendering of Dynamic, Spatially-Varying Reflectance
+    // https://www.microsoft.com/en-us/research/wp-content/uploads/2009/12/sg.pdf
+    float NoV = dot(V, normalWS);
+    float3 NDFAxis = (2 * NoV * normalWS - V) * (0.5f / max(roughness * roughness * NoV, 0.001f));
+
+    float umLength1 = length(NDFAxis + vs * bentNormalWS);
+    float umLength2 = length(NDFAxis + us * normalWS);
+    float d1 = 1 - exp(-2 * umLength1);
+    float d2 = 1 - exp(-2 * umLength2);
+
+    float expFactor1 = exp(umLength1 - umLength2 + us - vs);
+
+    return saturate(expFactor1 * (d1 * umLength2) / (d2 * umLength1));
+}
+
+real GetSpecularOcclusionFromAmbientOcclusion(real NdotV, real ambientOcclusion, real roughness)
+{
+    return saturate(PositivePow(NdotV + ambientOcclusion, exp2(-16.0 * roughness - 1.0)) - 1.0 + ambientOcclusion);
 }
 
 half4 GTAO(Varyings input) : SV_Target
@@ -178,8 +260,8 @@ half4 GTAO(Varyings input) : SV_Target
     float currDepth = GetDepthForCentral(posSS);
     float3 positionVS = GetPositionVS(posSS, currDepth);
 
-    float3 worldNormal = SampleNormal(uv);
-    float3 normalVS = GetNormalVS(worldNormal);
+    float3 normalWS = SampleNormal(uv);
+    float3 normalVS = GetNormalVS(normalWS);
 
     float offset = GetOffset(posSS);
     float2 rayStart = posSS;
@@ -189,7 +271,8 @@ half4 GTAO(Varyings input) : SV_Target
     // const int dirCount = 1;
 
     float3 V = normalize(-positionVS);
-    float fovCorrectedradiusSS = clamp(_AORadius *  _AOFOVCorrection  * rcp(positionVS.z), _AOStepCount,_AOMaxRadiusInPixels) ;
+    float fovCorrectedradiusSS = clamp(_AORadius * _AOFOVCorrection * rcp(positionVS.z), _AOStepCount,
+                                       _AOMaxRadiusInPixels);
     float step = max(1, fovCorrectedradiusSS * _AOInvStepCountPlusOne);
 
     float3 bentNormal = 0;
@@ -225,14 +308,14 @@ half4 GTAO(Varyings input) : SV_Target
 
 
         // return bentAngle;
-        
+
         maxHorizons.x = N + max(maxHorizons.x - N, -HALF_PI);
         maxHorizons.y = N + min(maxHorizons.y - N, HALF_PI);
 
-        
+
         integral += AnyIsNaN(maxHorizons) ? 1 : IntegrateArcCosWeighted(maxHorizons.x, maxHorizons.y, N, cosN);
 
-        float bentAngle = AnyIsNaN(maxHorizons)? 1: (maxHorizons.x + maxHorizons.y) * 0.5f;
+        float bentAngle = AnyIsNaN(maxHorizons) ? 1 : (maxHorizons.x + maxHorizons.y) * 0.5f;
 
         // bentAngle = abs(bentAngle);
         // return float4(bentAngle, bentAngle, bentAngle, 1);
@@ -241,8 +324,8 @@ half4 GTAO(Varyings input) : SV_Target
         // cosA = abs(sin(bentAngle));
 
         // return float4(cosA, cosA, cosA, 1);
-        
-        bentNormal += normalize( projNLen*( V * cos(bentAngle) - T * sin(bentAngle)) + NN);
+
+        bentNormal += normalize(projNLen * (V * cos(bentAngle) - T * sin(bentAngle)) + NN);
         // bentNormal +=  V * cos(bentAngle) - T * sin(bentAngle) + sliceN;
     }
 
@@ -253,7 +336,6 @@ half4 GTAO(Varyings input) : SV_Target
 
     if (currDepth == UNITY_RAW_FAR_CLIP_VALUE || integral < -1e-2f)
     {
-        return float4(1, 0, 0, 1);
         integral = 0;
     }
 
@@ -262,31 +344,39 @@ half4 GTAO(Varyings input) : SV_Target
     // float3 Bent = GetNormalWS(bentNormal);
     float3 Bent = bentNormal;
 
-     float3 show = GetNormalWS(bentNormal);
-//
-     if(_Debug>1)
-         show = GetNormalWS(normalVS);
-//
-//     // show = bentNormal;
-// // bentNormalWS = worldNormal;
-//     // return float4(worldNormal, 1);
-     // return float4(0.5 * (show+1), 1);
+    float3 bentNormalWS = GetNormalWS(bentNormal);
+    float3 VWS = GetNormalWS(V);
 
-    float GTAO = 1 - integral;
-    float3 reflectionDir = reflect(-V, normalVS);
+    float3 show = bentNormalWS;
+    //
+    if (_Debug > 1)
+        show = normalWS;
 
-    // return float4(reflectionDir, 1);
+    // show = VWS;
 
-    float GTRO = saturate(dot(Bent, reflectionDir)) ;
+    //     // show = bentNormal;
+    // // bentNormalWS = worldNormal;
+    //     // return float4(worldNormal, 1);
+    // return float4(0.5 * (show+1), 1);
 
-    // GTRO = 1 - saturate(dot(Bent, normalVS));
+    float GTAO = saturate(integral);
 
-    // integral =  GTRO;
+    // bentNormal.z = -bentNormal.z;
+    // normalVS.z = -normalVS.z;
+
+    float GTRO = GetSpecularOcclusionFromBentAO(V, bentNormal, normalVS, GTAO, 0.5f);
 
 
-    integral = GTRO - GTAO ;
+    // ro = GTAO;
+    // ro = 1 - ro;
 
-    return float4(integral, integral, integral, 1);
+    // ro = GetSpecularOcclusionFromAmbientOcclusion((dot(normalVS, V)),GTAO,0.5f);
+    // ro = 1 - GTAO;
+
+    GTAO = 1 - _AOIntensity*(1 - GTAO);
+    GTAO = saturate(GTAO);
+
+    return float4(GTAO, GTRO, 0, 1);
 }
 
 

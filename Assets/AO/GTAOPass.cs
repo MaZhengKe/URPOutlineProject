@@ -10,6 +10,8 @@ namespace AO
         protected Material material;
 
         private GTAOSettings settings;
+        
+        public string TargetTextureName = "_GTAO";
 
 
         protected GTAOFeature.ProfileId ProfileId = GTAOFeature.ProfileId.GTAO;
@@ -133,9 +135,26 @@ namespace AO
             
             return  parameters;
         }
+
+
+        protected RTHandle m_TargetTexture;
         
+        protected RenderTextureDescriptor descriptor;
         
-        
+        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
+        {
+            base.OnCameraSetup(cmd, ref renderingData);
+
+            var cameraTargetDescriptor = renderingData.cameraData.cameraTargetDescriptor;
+
+            descriptor = cameraTargetDescriptor;
+            descriptor.depthBufferBits = 0;
+            descriptor.msaaSamples = 1;
+
+            RenderingUtils.ReAllocateIfNeeded(ref m_TargetTexture, descriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name: TargetTextureName);
+        }
+
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             
@@ -145,6 +164,7 @@ namespace AO
             
             material.SetFloat("_Debug", settings.debug);
             material.SetFloat("_AORadius", settings.radius);
+            material.SetFloat("_AOIntensity", settings.intensity);
             // Debug.Log(settings.radius);
             material.SetInt("_AOStepCount", settings.stepCount);
             material.SetFloat("_AODirectionCount", settings.directionCount);
@@ -162,14 +182,17 @@ namespace AO
 
             // Debug.Log(para.cb._AOParams0.y);
             // Debug.Log(para.cb._AODepthToViewParams);
-            
-            
-            
 
             using (new ProfilingScope(cmd, ProfilingSampler.Get(ProfileId)))
             {
+                CoreUtils.SetRenderTarget(cmd, m_TargetTexture, ClearFlag.Color, Color.black);
+                // CoreUtils.DrawFullScreen(cmd,material);
                 Blitter.BlitTexture(cmd, Texture2D.blackTexture, Vector2.one, material, 0);
+                
+                cmd.SetGlobalTexture(TargetTextureName, m_TargetTexture);
+                CoreUtils.SetRenderTarget(cmd, m_Renderer.cameraColorTargetHandle,m_Renderer.cameraDepthTargetHandle);
             }
+
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
             
@@ -188,7 +211,7 @@ namespace AO
 
         public void Dispose()
         {
-            
+            m_TargetTexture?.Release();
         }
     }
 }

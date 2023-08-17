@@ -15,7 +15,7 @@ MonoBehaviour:
   active: 1
   BlurRadius:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 1.18
   Iteration:
     m_OverrideState: 1
     m_Value: 1

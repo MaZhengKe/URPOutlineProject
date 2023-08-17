@@ -10,7 +10,7 @@ namespace KuanMi.Blur
         protected K blurSetting;
 
         protected MaskBlur maskBlur;
-        
+
         protected Material m_BlendMaterial;
 
         protected bool isMask => maskBlur.isMask.value;
@@ -20,7 +20,7 @@ namespace KuanMi.Blur
 
         protected RTHandle m_MaskTexture;
         protected RTHandle m_TargetTexture;
-        
+
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
@@ -28,7 +28,7 @@ namespace KuanMi.Blur
 
             var stack = VolumeManager.instance.stack;
             maskBlur = stack.GetComponent<MaskBlur>();
-            if(blurSetting != null)
+            if (blurSetting != null)
             {
                 descriptor.width /= blurSetting.DownSample;
                 descriptor.height /= blurSetting.DownSample;
@@ -87,15 +87,14 @@ namespace KuanMi.Blur
 
                     if (renderToTexture)
                     {
-                        
                         Blit(cmd, m_MaskTexture, m_TargetTexture, m_BlendMaterial);
+                        cmd.SetGlobalTexture(TargetTextureName, m_TargetTexture);
                     }
                     else
 
                         Blit(cmd, m_MaskTexture, m_Renderer.cameraColorTargetHandle, m_BlendMaterial);
                 }
-                
-                cmd.SetGlobalTexture(TargetTextureName, m_TargetTexture);
+
                 CoreUtils.SetRenderTarget(cmd, m_Renderer.cameraColorTargetHandle);
             }
 
@@ -103,11 +102,12 @@ namespace KuanMi.Blur
             CommandBufferPool.Release(cmd);
         }
 
-        public virtual bool Setup(ScriptableRenderer renderer,Material material,K featureSettings,Material blendMaterial)
+        public virtual bool Setup(ScriptableRenderer renderer, Material material, K featureSettings,
+            Material blendMaterial)
         {
             blurSetting = featureSettings;
             m_BlendMaterial = blendMaterial;
-            
+
             if (!base.Setup(renderer))
                 return false;
             return blurSetting.Iteration > 0 && blurSetting.BlurRadius > 0;

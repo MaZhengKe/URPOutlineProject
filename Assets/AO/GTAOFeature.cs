@@ -47,7 +47,10 @@ namespace AO
 
             material = CoreUtils.CreateEngineMaterial(shader);
 
-            GTAOPass = new GTAOPass();
+            GTAOPass = new GTAOPass()
+            {
+                renderPassEvent = RenderPassEvent.BeforeRenderingOpaques
+            };
 
 
         }
