@@ -392,7 +392,7 @@ Shader "Universal Render Pipeline/AOROLit"
             // -------------------------------------
             // Includes
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitDepthNormalsPass.hlsl"
+            #include "LitDepthNormalsPass.hlsl"
             ENDHLSL
         }
 

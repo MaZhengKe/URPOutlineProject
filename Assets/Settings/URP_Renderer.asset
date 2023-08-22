@@ -35,6 +35,21 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 3302065f671a8450b82c9ddf07426f3a, type: 3}
   - {fileID: 2800000, guid: 56a77a3e8d64f47b6afe9e3c95cb57d5, type: 3}
   m_Shader: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
+--- !u!114 &-8428938818679620333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c66376e4f7244ec9127061306cc6d80, type: 3}
+  m_Name: SSRFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  DepthPyramidShader: {fileID: 4800000, guid: 96d1c09b78fc4f419a96f726a0bdd47f, type: 3}
+  DepthPyramidMaterial: {fileID: 0}
 --- !u!114 &-4566157581653433108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,6 +163,21 @@ MonoBehaviour:
     BlurRadius: 1
     Iteration: 1
     DownSample: 1
+--- !u!114 &-554691194882331045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1b794044a44052b5e3973e6d843307, type: 3}
+  m_Name: DepthPyramidFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  DepthPyramidShader: {fileID: 4800000, guid: 5f737b3327fb49f59aae5d6c00b88b00, type: 3}
+  DepthPyramidMaterial: {fileID: 0}
 --- !u!114 &-124101717157048921
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -200,7 +230,9 @@ MonoBehaviour:
   - {fileID: -8573823046108115447}
   - {fileID: 4915402011528432419}
   - {fileID: -1888180886370366353}
-  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe090eab995da90389238b6429160437446f4c36e47cd5cbe5
+  - {fileID: -554691194882331045}
+  - {fileID: -8428938818679620333}
+  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe090eab995da90389238b6429160437446f4c36e47cd5cbe55b6e00114c574df813bd1987cd64068b
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -235,8 +267,8 @@ MonoBehaviour:
     zFailOperation: 0
   m_ShadowTransparentReceive: 1
   m_RenderingMode: 0
-  m_DepthPrimingMode: 0
-  m_CopyDepthMode: 1
+  m_DepthPrimingMode: 2
+  m_CopyDepthMode: 2
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 1
 --- !u!114 &4092994512869341584
