@@ -14,6 +14,26 @@ namespace DepthP
         
         public Material DepthPyramidMaterial;
 
+        
+        public Texture2D[] blueNoise16RGBTex;
+        [Reload("Textures/OwenScrambledNoise4.png")]
+        public Texture2D owenScrambledRGBATex;
+        [Reload("Textures/OwenScrambledNoise256.png")]
+        public Texture2D owenScrambled256Tex;
+        [Reload("Textures/ScrambleNoise.png")]
+        public Texture2D scramblingTex;
+        [Reload("Textures/RankingTile1SPP.png")]
+        public Texture2D rankingTile1SPP;
+        [Reload("Textures/ScramblingTile1SPP.png")]
+        public Texture2D scramblingTile1SPP;
+        [Reload("Textures/RankingTile8SPP.png")]
+        public Texture2D rankingTile8SPP;
+        [Reload("Textures/ScramblingTile8SPP.png")]
+        public Texture2D scramblingTile8SPP;
+        [Reload("Textures/RankingTile256SPP.png")]
+        public Texture2D rankingTile256SPP;
+        [Reload("Textures/ScramblingTile256SPP.png")]
+        public Texture2D scramblingTile256SPP;
 
         public enum ProfileId
         {
@@ -41,7 +61,7 @@ namespace DepthP
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            m_SSRPass.Setup(renderer, DepthPyramidMaterial);
+            m_SSRPass.Setup(renderer, DepthPyramidMaterial,this);
             renderer.EnqueuePass(m_SSRPass);
             
         }
@@ -98,10 +118,12 @@ namespace DepthP
             
         }
 
-        public bool Setup(ScriptableRenderer renderer, Material material)
+        SSRFeature ssrFeature;
+        public bool Setup(ScriptableRenderer renderer, Material material, SSRFeature ssrFeature)
         {
             m_Renderer = renderer;
             m_Material = material;
+            this.ssrFeature = ssrFeature;
             return true;
         }
         
@@ -110,14 +132,23 @@ namespace DepthP
             SsrHitPointTexture?.Release();
         }
 
+        internal void BindDitheredRNGData1SPP(CommandBuffer cmd)
+        {
+            cmd.SetGlobalTexture("_OwenScrambledTexture", ssrFeature.owenScrambled256Tex);
+            cmd.SetGlobalTexture("_ScramblingTileXSPP", ssrFeature.scramblingTile1SPP);
+            cmd.SetGlobalTexture("_RankingTileXSPP", ssrFeature.rankingTile1SPP);
+            cmd.SetGlobalTexture("_ScramblingTexture", ssrFeature.scramblingTex);
+        }
+        
+        int FrameCount = 0;
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            
+            FrameCount++;
             var cmd = CommandBufferPool.Get();
 
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
-                float thickness = 0.011f;
+                float thickness = 0.01f;
                 float n = renderingData.cameraData.camera.nearClipPlane;
                 float f = renderingData.cameraData.camera.farClipPlane;
                 
@@ -126,6 +157,10 @@ namespace DepthP
                 
                 m_Material.SetFloat("_SsrThicknessScale",_SsrThicknessScale);
                 m_Material.SetFloat("_SsrThicknessBias", _SsrThicknessBias);
+                m_Material.SetFloat("_SsrPBRBias", 0.5f);
+                m_Material.SetInt("_FrameCount", FrameCount);
+                
+                BindDitheredRNGData1SPP(cmd);
                 
                 
                 CoreUtils.DrawFullScreen(cmd, m_Material, SsrHitPointTexture);

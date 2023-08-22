@@ -50,6 +50,16 @@ MonoBehaviour:
   m_Active: 1
   DepthPyramidShader: {fileID: 4800000, guid: 96d1c09b78fc4f419a96f726a0bdd47f, type: 3}
   DepthPyramidMaterial: {fileID: 0}
+  blueNoise16RGBTex: []
+  owenScrambledRGBATex: {fileID: 2800000, guid: 8e9cf6d49aa962b47afe2c9ac6bd1f86, type: 3}
+  owenScrambled256Tex: {fileID: 2800000, guid: bccdc6eed0ef5d14faa5d5df6f3859e4, type: 3}
+  scramblingTex: {fileID: 2800000, guid: 445de39aac677324ab65686e2bbbf49f, type: 3}
+  rankingTile1SPP: {fileID: 2800000, guid: db84379d29f58784aba036b5a4713573, type: 3}
+  scramblingTile1SPP: {fileID: 2800000, guid: 2b0160fd9d289da4db4f415937903ec9, type: 3}
+  rankingTile8SPP: {fileID: 2800000, guid: c2b0ac052df1927439c4cf7f349a935b, type: 3}
+  scramblingTile8SPP: {fileID: 2800000, guid: 93105a5f258559c41842f49c006cad89, type: 3}
+  rankingTile256SPP: {fileID: 2800000, guid: ff35297cd8ea32e429249d80d1f01b0c, type: 3}
+  scramblingTile256SPP: {fileID: 2800000, guid: bfba9718f9f850540a59e3e89d8ccc6c, type: 3}
 --- !u!114 &-4566157581653433108
 MonoBehaviour:
   m_ObjectHideFlags: 0
