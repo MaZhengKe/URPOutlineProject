@@ -199,6 +199,13 @@ Varyings LitPassVertex(Attributes input)
     return output;
 }
 
+
+TEXTURE2D_X_FLOAT(_SsrLightingTexture);
+SAMPLER(sampler_SsrLightingTexture);
+float4 _SsrLightingTexture_TexelSize;
+
+
+
 // Used in Standard (Physically Based) shader
 void LitPassFragment(
     Varyings input
@@ -239,7 +246,10 @@ void LitPassFragment(
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
     color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent(_Surface));
 
-    outColor = color;
+    float2 ssUV = inputData.normalizedScreenSpaceUV;
+    half4 ssrColor = SAMPLE_TEXTURE2D_X(_SsrLightingTexture, sampler_SsrLightingTexture, ssUV);
+
+    outColor = color + ssrColor*0.5;
 
 #ifdef _WRITE_RENDERING_LAYERS
     uint renderingLayers = GetMeshRenderingLayer();

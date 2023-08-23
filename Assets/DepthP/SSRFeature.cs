@@ -85,6 +85,8 @@ namespace DepthP
         
         public RTHandle SsrHitPointTexture;
         public RTHandle SsrAccumTexture;
+        public RTHandle SsrAccumPrevTexture;
+        public RTHandle SsrLightingTexture;
         
         public int mipCount = 10;
         
@@ -115,6 +117,12 @@ namespace DepthP
 
             RenderingUtils.ReAllocateIfNeeded(ref SsrAccumTexture, accumDescriptor, FilterMode.Bilinear,
                 TextureWrapMode.Clamp, name: "_SsrAccumTexture");
+            
+            RenderingUtils.ReAllocateIfNeeded(ref SsrAccumPrevTexture, accumDescriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name: "_SsrAccumPrevTexture");
+            
+            RenderingUtils.ReAllocateIfNeeded(ref SsrLightingTexture, accumDescriptor, FilterMode.Bilinear,
+                TextureWrapMode.Clamp, name: "_SsrLightingTexture");
             
         }
 
@@ -149,30 +157,41 @@ namespace DepthP
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
                 float thickness = 0.01f;
+                float accumulationFactor = 0.75f;
                 float n = renderingData.cameraData.camera.nearClipPlane;
                 float f = renderingData.cameraData.camera.farClipPlane;
                 
                 float _SsrThicknessScale = 1.0f / (1.0f + thickness);
                 float _SsrThicknessBias = -n / (f - n) * (thickness * _SsrThicknessScale);
                 
+                
+                float _SsrAccumulationAmount = Mathf.Pow(2, Mathf.Lerp(0.0f, -7.0f, accumulationFactor));
+                
                 m_Material.SetFloat("_SsrThicknessScale",_SsrThicknessScale);
                 m_Material.SetFloat("_SsrThicknessBias", _SsrThicknessBias);
                 m_Material.SetFloat("_SsrPBRBias", 0.5f);
                 m_Material.SetInt("_FrameCount", FrameCount);
+                m_Material.SetFloat("_SsrAccumulationAmount", _SsrAccumulationAmount);
                 
                 BindDitheredRNGData1SPP(cmd);
                 
                 
+                CoreUtils.SetRenderTarget(cmd,SsrAccumPrevTexture);
+                Blitter.BlitTexture(cmd, SsrLightingTexture,new Vector4(1,1,0,0),0,false);
+                cmd.SetGlobalTexture("_SsrAccumPrev",SsrAccumPrevTexture);
+
                 CoreUtils.DrawFullScreen(cmd, m_Material, SsrHitPointTexture);
                 cmd.SetGlobalTexture("_SsrHitPointTexture",SsrHitPointTexture);
-                
-                
+
                 CoreUtils.DrawFullScreen(cmd, m_Material, SsrAccumTexture,null,1);
-                cmd.SetGlobalTexture("_SsrAccumTexture",SsrAccumTexture);
+                cmd.SetGlobalTexture("_SSRAccumTexture",SsrAccumTexture);
+                
+                CoreUtils.DrawFullScreen(cmd, m_Material, SsrLightingTexture,null,2);
+                cmd.SetGlobalTexture("_SsrLightingTexture",SsrLightingTexture);
 
-
+                
                 CoreUtils.SetRenderTarget(cmd,m_Renderer.cameraColorTargetHandle);
-                Blitter.BlitTexture(cmd, SsrAccumTexture,new Vector4(1,1,0,0),0,false);
+                Blitter.BlitTexture(cmd, SsrLightingTexture,new Vector4(1,1,0,0),0,false);
                 
                 
                 

@@ -133,14 +133,14 @@
 
                 // fetch value in sequence
                 uint value = clamp((uint)(_OwenScrambledTexture[uint2(sampleDimension, rankedSampleIndex.x)] * 256.0),
-                    0, 255);
+                                   0, 255);
 
 
                 // return _OwenScrambledTexture[uint2(pixelCoord)];
                 // If the dimension is optimized, xor sequence value based on optimized scrambling
                 uint scramblingIndex = (pixelCoord.x + pixelCoord.y * 128) * 8 + (sampleDimension & 7);
                 float scramblingValue = min(_ScramblingTileXSPP[uint2(scramblingIndex & 127, scramblingIndex / 128)],
-                    0.999);
+                                            0.999);
                 value = value ^ uint(scramblingValue * 256.0);
 
                 // return rankedSampleIndex/500.0;
@@ -164,11 +164,11 @@
 
             // Specialization without Fresnel (see PathTracingBSDF.hlsl for the reference implementation)
             bool SampleGGX_VNDF(float roughness_,
-                float3x3 localToWorld,
-                float3 V,
-                float2 inputSample,
-                out float3 outgoingDir,
-                out float weight)
+                                float3x3 localToWorld,
+                                float3 V,
+                                float2 inputSample,
+                                out float3 outgoingDir,
+                                out float weight)
             {
                 weight = 0.0f;
 
@@ -196,15 +196,16 @@
             }
 
             void GetHitInfos(uint2 positionSS, out float srcPerceptualRoughness, out float3 positionWS,
-                out float weight, out float3 N, out float3 L, out float3 V, out float NdotL, out float NdotH,
-                out float VdotH, out float NdotV)
+                             out float weight, out float3 N, out float3 L, out float3 V, out float NdotL,
+                             out float NdotH,
+                             out float VdotH, out float NdotV)
             {
                 float2 uv = float2(positionSS) * _RTHandleScale.xy;
 
 
                 float2 Xi;
-                Xi.x = GetBNDSequenceSample(positionSS, 10, 0);
-                Xi.y = GetBNDSequenceSample(positionSS, 10, 1);
+                Xi.x = GetBNDSequenceSample(positionSS, _FrameCount, 0);
+                Xi.y = GetBNDSequenceSample(positionSS, _FrameCount, 1);
 
 
                 float3 normalWS;
@@ -238,11 +239,11 @@
                 float value;
 
                 SampleGGX_VNDF(roughness,
-                    localToWorld,
-                    V,
-                    Xi,
-                    L,
-                    weight);
+                               localToWorld,
+                               V,
+                               Xi,
+                               L,
+                               weight);
 
                 NdotV = dot(normalWS, V);
                 NdotL = dot(normalWS, L);
@@ -330,10 +331,10 @@
                 float3 rayDir = reflPosSS - rayOrigin;
                 float3 rcpRayDir = rcp(rayDir);
                 int2 rayStep = int2(rcpRayDir.x >= 0 ? 1 : 0,
-                    rcpRayDir.y >= 0 ? 1 : 0);
+                                    rcpRayDir.y >= 0 ? 1 : 0);
                 float3 raySign = float3(rcpRayDir.x >= 0 ? 1 : -1,
-                    rcpRayDir.y >= 0 ? 1 : -1,
-                    rcpRayDir.z >= 0 ? 1 : -1);
+                                        rcpRayDir.y >= 0 ? 1 : -1,
+                                        rcpRayDir.z >= 0 ? 1 : -1);
                 bool rayTowardsEye = rcpRayDir.z >= 0;
 
 
@@ -592,8 +593,9 @@
                 float tmpCoef = 1.0;
                 opacity = 1.0;
                 // opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength) * tmpCoef;
-
-                return SampleSceneColor(hitPositionNDC);
+return SampleSceneColor(hitPositionNDC);
+                // return 1;
+                // return float3(hitPositionNDC, 0);
                 // return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
             }
 
@@ -652,7 +654,7 @@
                 float depthOrigin = LOAD_TEXTURE2D_X(_DepthPyramidTexture, positionSS0).r;
 
                 PositionInputs posInputOrigin = GetPositionInput(positionSS0.xy, _ScreenSize.zw, depthOrigin,
-                    UNITY_MATRIX_I_VP, UNITY_MATRIX_V, uint2(8, 8));
+                                                                 UNITY_MATRIX_I_VP, UNITY_MATRIX_V, uint2(8, 8));
                 float3 originWS = posInputOrigin.positionWS + _WorldSpaceCameraPos;
 
                 // TODO: this texture is sparse (mostly black). Can we avoid reading every texel? How about using Hi-S?
@@ -727,10 +729,229 @@
                     // float opacity = isPosFin ? opacity : 0;
                     wAll = isPosFin ? wAll : 0;
 
-                    color =  outputs / wAll;
+                    color = outputs / wAll;
                 }
                 return color;
             }
+            ENDHLSL
+        }
+
+
+
+
+        Pass
+        {
+
+            Name "Accumulate"
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonLighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ImageBasedLighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+
+
+            TEXTURE2D_X_FLOAT(_SsrHitPointTexture);
+            SAMPLER(sampler_SsrHitPointTexture);
+            float4 _SsrHitPointTexture_TexelSize;
+
+
+            TEXTURE2D_X_FLOAT(_SSRAccumTexture);
+            SAMPLER(sampler_SSRAccumTexture);
+            float4 _SSRAccumTexture_TexelSize;
+
+            TEXTURE2D_X_FLOAT(_SsrAccumPrev);
+            SAMPLER(sampler_SsrAccumPrev);
+            float4 _SsrAccumPrev_TexelSize;
+
+            TEXTURE2D_X_FLOAT(_DepthPyramidTexture);
+            SAMPLER(sampler_DepthPyramidTexture);
+            float4 _DepthPyramidTexture_TexelSize;
+
+                float _SsrAccumulationAmount;
+
+            struct Attributes
+            {
+                uint vertexID : VERTEXID_SEMANTIC;
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 texCoord0 : TEXCOORD0;
+            };
+
+            Varyings vert(Attributes IN)
+            {
+                Varyings output;
+                output.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
+                output.texCoord0 = output.positionCS.xy * 0.5 + 0.5;
+
+                #if UNITY_UV_STARTS_AT_TOP
+                output.texCoord0.y = 1 - output.texCoord0.y;
+                #endif
+                return output;
+            }
+
+            #define MIN_GGX_ROUGHNESS           0.00001f
+            #define MAX_GGX_ROUGHNESS           0.99999f
+
+            void GetNormalAndPerceptualRoughness(uint2 positionSS, out float3 normalWS, out float perceptualRoughness)
+            {
+                float4 packedCoatMask = LOAD_TEXTURE2D_X(_CameraNormalsTexture, positionSS);
+                normalWS = packedCoatMask.xyz;
+                perceptualRoughness = packedCoatMask.w;
+            }
+
+            float3 GetWorldSpacePosition(uint2 positionSS)
+            {
+                float2 uv = float2(positionSS) * _RTHandleScale.xy;
+
+                float deviceDepth = LOAD_TEXTURE2D_X(_DepthPyramidTexture, positionSS).r;
+
+                float2 positionNDC = positionSS * _ScreenSize.zw + (0.5 * _ScreenSize.zw);
+
+                return ComputeWorldSpacePosition(positionNDC, deviceDepth, UNITY_MATRIX_I_VP);
+            }
+
+            float2 GetWorldSpacePoint(uint2 positionSS, out float3 positionSrcWS, out float3 positionDstWS)
+            {
+                positionSrcWS = GetWorldSpacePosition(positionSS);
+
+                float2 hitData = _SsrHitPointTexture[(positionSS)].xy;
+                uint2 positionDstSS = (hitData.xy - (0.5 * _ScreenSize.zw)) / _ScreenSize.zw;
+
+                positionDstWS = GetWorldSpacePosition(positionDstSS);
+
+                return hitData.xy;
+            }
+
+            float GetSSRSampleWeight(float3 V, float3 L, float roughness)
+            {
+                // Simplification:
+                // value = D_GGX / (lambdaVPlusOne + lambdaL);
+                // pdf = D_GGX / lambdaVPlusOne;
+
+                const float lambdaVPlusOne = Lambda_GGX(roughness, V) + 1.0;
+                const float lambdaL = Lambda_GGX(roughness, L);
+
+                return lambdaVPlusOne / (lambdaVPlusOne + lambdaL);
+            }
+
+
+            float3 GetHitColor(float2 hitPositionNDC, float perceptualRoughness, out float opacity, int mipLevel = 0)
+            {
+                float2 prevFrameNDC = (hitPositionNDC);
+                float2 prevFrameUV = prevFrameNDC * 512;
+
+                float tmpCoef = 1.0;
+                opacity = 1.0;
+                // opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength) * tmpCoef;
+
+                // return 1;
+                return float3(hitPositionNDC, 0);
+                // return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
+            }
+
+
+            float2 GetSampleInfo(uint2 positionSS, out float3 color, out float weight, out float opacity)
+            {
+                float3 positionSrcWS;
+                float3 positionDstWS;
+                float2 hitData = GetWorldSpacePoint(positionSS, positionSrcWS, positionDstWS);
+
+                float3 V = GetWorldSpaceNormalizeViewDir(positionSrcWS);
+                float3 L = normalize(positionDstWS - positionSrcWS);
+                float3 H = normalize(V + L);
+
+                float3 N;
+                float perceptualRoughness;
+                GetNormalAndPerceptualRoughness(positionSS, N, perceptualRoughness);
+
+
+                float roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
+
+                roughness = clamp(roughness, MIN_GGX_ROUGHNESS, MAX_GGX_ROUGHNESS);
+
+                weight = GetSSRSampleWeight(V, L, roughness);
+
+                color = GetHitColor(hitData.xy, perceptualRoughness, opacity, 0);
+
+                return hitData;
+            }
+
+            half3 frag(Varyings IN) : SV_Target
+            {
+                float2 uv = IN.texCoord0;
+                uint2 positionSS = uv * _ScreenParams.xy;
+
+                float3 N;
+                float perceptualRoughness;
+                GetNormalAndPerceptualRoughness(positionSS, N, perceptualRoughness);
+
+
+                float roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
+                roughness = clamp(roughness, MIN_GGX_ROUGHNESS, MAX_GGX_ROUGHNESS);
+
+
+                float4 data0 = _SSRAccumTexture[(int2(positionSS))];
+
+
+                float2 hitPositionNDC = LOAD_TEXTURE2D_X(_SsrHitPointTexture, positionSS).xy;
+
+
+                float2 hitSS = (hitPositionNDC.xy - (0.5 * _ScreenSize.zw)) / _ScreenSize.zw;
+
+                float3 hitN;
+                float hitRoughness;
+                GetNormalAndPerceptualRoughness(hitSS, hitN, hitRoughness);
+
+
+                float4 original = _SSRAccumTexture[(positionSS)];
+
+                float4 previous = _SsrAccumPrev[(positionSS)];
+
+
+                float2 motionVectorNDC = 0;
+                float2 motionVectorCenterNDC = 0;
+
+
+
+    // 128 is an arbitrary value used historical
+    // 0.5f is the default for the parameter 'Speed Rejection': ScreenSpaceReflection.cs 'speedRejectionParam'
+    // 0.2f is the default for the parameter 'Speed Rejection Scaler Factor': ScreenSpaceReflection.cs 'speedRejectionScalerFactor'
+    float speed = 0;
+
+    float coefExpAvg = lerp(_SsrAccumulationAmount, 1.0f, speed);
+
+// return coefExpAvg;
+    float4 result = lerp(previous, original, coefExpAvg);
+
+
+
+    uint3 intCol = asuint(result.rgb);
+    bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
+
+    result.rgb = isPosFin ? result.rgb : 0;
+    result.w = isPosFin ? result.w : 0;
+
+                return result;
+                
+         
+            }
+            
+            
+            
             ENDHLSL
         }
     }
