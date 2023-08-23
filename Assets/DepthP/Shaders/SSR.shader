@@ -44,6 +44,9 @@
             float _SsrPBRBias;
             int _FrameCount;
 
+            int _SsrDepthPyramidMaxMip;
+            float4 _DepthPyramidMipLevelOffsets[15];
+
 
             struct Attributes
             {
@@ -273,21 +276,14 @@
 
                 uint2 positionSS = uv * _ScreenParams.xy;
 
-                
 
-
-
-                int mip = 7;
-                int2 mipCoord = (int2)positionSS.xy >> mip;
-                
-
-
-                    float d = LOAD_TEXTURE2D_X_LOD(_DepthPyramidTexture, mipCoord, mip).r;
-
-                return d;
-
-
-                
+                // int mip = 7;
+                // int2 mipCoord = (int2)positionSS.xy >> mip;
+                // int4 mipOffset = _DepthPyramidMipLevelOffsets[mip];
+                //
+                //
+                // float d = LOAD_TEXTURE2D_X(_DepthPyramidTexture, mipOffset + mipCoord).r;
+                // return d;
 
                 // return (float2)positionSS / 512;
 
@@ -391,11 +387,11 @@
                     tMax = Min3(dist.x, dist.y, dist.z);
                 }
 
-                // return tMax/5;
+                // return rayDir;
 
                 // Clamp the MIP level to give the compiler more information to optimize.
                 //_SsrDepthPyramidMaxMip 10
-                const int maxMipLevel = min(10, 14);
+                const int maxMipLevel = min(_SsrDepthPyramidMaxMip, 14);
 
                 // Start ray marching from the next texel to avoid self-intersections.
                 float t;
@@ -414,15 +410,20 @@
                 bool belowMip0 = false; // This value is set prior to entering the cell
 
                 //_SsrIterLimit 64
-                while (!(hit || miss) && (t <= tMax) && (iterCount < 128))
+                while (!(hit || miss) && (t <= tMax) && (iterCount < 64))
                 {
+                    // 当前步进到的位置
                     rayPos = rayOrigin + t * rayDir;
 
+                    // 最近的小数
                     float2 sgnEdgeDist = round(rayPos.xy) - rayPos.xy;
                     float2 satEdgeDist = clamp(raySign.xy * sgnEdgeDist + SSR_TRACE_EPS, 0, SSR_TRACE_EPS);
                     rayPos.xy += raySign.xy * satEdgeDist;
 
                     int2 mipCoord = (int2)rayPos.xy >> mipLevel;
+                    
+                    int4 mipOffset = _DepthPyramidMipLevelOffsets[mipLevel];
+
 
                     // int2 mipOffset = _DepthPyramidMipLevelOffsets[mipLevel];
 
@@ -431,7 +432,7 @@
                     float4 bounds;
 
                     bounds.xy = (mipCoord + rayStep) << mipLevel;
-                    bounds.z = LOAD_TEXTURE2D_X_LOD(_DepthPyramidTexture, mipCoord, mipLevel).r;
+                    bounds.z = LOAD_TEXTURE2D_X(_DepthPyramidTexture, mipOffset +mipCoord).r;
 
                     // We define the depth of the base as the depth value as:
                     // b = DeviceDepth((1 + thickness) * LinearDepth(d))
@@ -452,11 +453,15 @@
                     bool belowFloor  = (raySign.z * (t - distFloor)) <  0;
                     bool aboveBase   = (raySign.z * (t - distBase )) >= 0;
                     #else
+                    // 在Floor下面
                     bool belowFloor = rayPos.z < bounds.z;
+                    // 在Base上面 bounds.w即深度添加一点厚度。
                     bool aboveBase = rayPos.z >= bounds.w;
                     #endif
 
+                    // 在floor层中
                     bool insideFloor = belowFloor && aboveBase;
+
                     bool hitFloor = (t <= distFloor) && (distFloor <= distWall);
 
 
@@ -492,6 +497,7 @@
                     // It also needs to be precisely at the center of the pixel to avoid artifacts.
                     float2 hitPositionNDC = floor(rayPos.xy) * _ScreenSize.zw + (0.5 * _ScreenSize.zw);
                     // Should we precompute the half-texel bias? We seem to use it a lot.
+                    // return 1;
                     return float3(hitPositionNDC.xy, 0);
                 }
 

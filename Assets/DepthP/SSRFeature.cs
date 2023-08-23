@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -89,6 +90,14 @@ namespace DepthP
         public RTHandle SsrLightingTexture;
         
         public int mipCount = 10;
+
+        private DepthPyramidPass.PackedMipChainInfo info;
+        
+        public SSRPass()
+        {
+            info = new DepthPyramidPass.PackedMipChainInfo();
+            info.Allocate();
+        }
         
         
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
@@ -113,6 +122,8 @@ namespace DepthP
             accumDescriptor.msaaSamples = 1;
             accumDescriptor.colorFormat = RenderTextureFormat.ARGBFloat;
             
+            
+            info.ComputePackedMipChainInfo(new Vector2Int(descriptor.width, descriptor.height));
             
 
             RenderingUtils.ReAllocateIfNeeded(ref SsrAccumTexture, accumDescriptor, FilterMode.Bilinear,
@@ -171,7 +182,14 @@ namespace DepthP
                 m_Material.SetFloat("_SsrThicknessBias", _SsrThicknessBias);
                 m_Material.SetFloat("_SsrPBRBias", 0.5f);
                 m_Material.SetInt("_FrameCount", FrameCount);
+                m_Material.SetInt("_SsrDepthPyramidMaxMip", info.mipLevelCount - 1);
                 m_Material.SetFloat("_SsrAccumulationAmount", _SsrAccumulationAmount);
+
+
+                var infoMipLevelOffsets = info.mipLevelOffsets.Select(i => new Vector4(i.x, i.y, 0, 0)).ToArray();
+                
+                m_Material.SetVectorArray("_DepthPyramidMipLevelOffsets",infoMipLevelOffsets);
+                
                 
                 BindDitheredRNGData1SPP(cmd);
                 
@@ -191,7 +209,7 @@ namespace DepthP
 
                 
                 CoreUtils.SetRenderTarget(cmd,m_Renderer.cameraColorTargetHandle);
-                // Blitter.BlitTexture(cmd, SsrLightingTexture,new Vector4(1,1,0,0),0,false);
+                Blitter.BlitTexture(cmd, SsrLightingTexture,new Vector4(1,1,0,0),0,false);
                 
                 
                 
