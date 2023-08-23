@@ -413,6 +413,49 @@ half3 SubtractDirectMainLightFromLightmap(Light mainLight, half3 normalWS, half3
     return min(bakedGI, realtimeShadow);
 }
 
+
+half3 GlobalIllumination(BRDFData brdfData, BRDFData brdfDataClearCoat, float clearCoatMask,
+    half3 bakedGI, half occlusion,half RO, float3 positionWS,
+    half3 normalWS, half3 viewDirectionWS, float2 normalizedScreenSpaceUV,float4 SSR)
+{
+    half3 reflectVector = reflect(-viewDirectionWS, normalWS);
+    half NoV = saturate(dot(normalWS, viewDirectionWS));
+    half fresnelTerm = Pow4(1.0 - NoV);
+
+    half3 indirectDiffuse = bakedGI;
+    half3 indirectSpecular = GlossyEnvironmentReflection(reflectVector, positionWS, brdfData.perceptualRoughness, 1.0h, normalizedScreenSpaceUV);
+
+    // indirectSpecular = lerp(indirectSpecular, SSR.rgb, SSR.a);
+    // indirectSpecular = lerp(indirectSpecular, SSR.rgb, 0);
+
+    indirectSpecular += SSR.rgb;
+
+    indirectDiffuse *= occlusion;
+    
+    indirectSpecular *= RO;
+    
+    half3 color = EnvironmentBRDF(brdfData, indirectDiffuse, indirectSpecular, fresnelTerm);
+
+    if (IsOnlyAOLightingFeatureEnabled())
+    {
+        color = half3(1,1,1); // "Base white" for AO debug lighting mode
+    }
+
+    #if defined(_CLEARCOAT) || defined(_CLEARCOATMAP)
+    half3 coatIndirectSpecular = GlossyEnvironmentReflection(reflectVector, positionWS, brdfDataClearCoat.perceptualRoughness, 1.0h, normalizedScreenSpaceUV);
+    // TODO: "grazing term" causes problems on full roughness
+    half3 coatColor = EnvironmentBRDFClearCoat(brdfDataClearCoat, clearCoatMask, coatIndirectSpecular, fresnelTerm);
+
+    // Blend with base layer using khronos glTF recommended way using NoV
+    // Smooth surface & "ambiguous" lighting
+    // NOTE: fresnelTerm (above) is pow4 instead of pow5, but should be ok as blend weight.
+    half coatFresnel = kDielectricSpec.x + kDielectricSpec.a * fresnelTerm;
+    return (color * (1.0 - coatFresnel * clearCoatMask) + coatColor) * occlusion;
+    #else
+    return color;
+        #endif
+}
+
 half3 GlobalIllumination(BRDFData brdfData, BRDFData brdfDataClearCoat, float clearCoatMask,
     half3 bakedGI, half occlusion,half RO, float3 positionWS,
     half3 normalWS, half3 viewDirectionWS, float2 normalizedScreenSpaceUV)

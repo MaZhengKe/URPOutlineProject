@@ -241,6 +241,15 @@ half3 CalculateBlinnPhong(Light light, InputData inputData, SurfaceData surfaceD
 #endif
 }
 
+
+
+
+TEXTURE2D_X_FLOAT(_SsrLightingTexture);
+SAMPLER(sampler_SsrLightingTexture);
+float4 _SsrLightingTexture_TexelSize;
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //                      Fragment Functions                                   //
 //       Used by ShaderGraph and others builtin renderers                    //
@@ -282,9 +291,14 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
 
     LightingData lightingData = CreateLightingData(inputData, surfaceData);
 
+
+float2 ssUV = inputData.normalizedScreenSpaceUV;
+half4 ssrColor = SAMPLE_TEXTURE2D_X(_SsrLightingTexture, sampler_SsrLightingTexture, ssUV);
+
+
     lightingData.giColor = GlobalIllumination(brdfData, brdfDataClearCoat, surfaceData.clearCoatMask,
                                               inputData.bakedGI, aoFactor.indirectAmbientOcclusion, aoFactor.ro,inputData.positionWS,
-                                              inputData.normalWS, inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV);
+                                              inputData.normalWS, inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV,ssrColor);
 #ifdef _LIGHT_LAYERS
     if (IsMatchingLightLayer(mainLight.layerMask, meshRenderingLayers))
 #endif

@@ -204,8 +204,10 @@
 
 
                 float2 Xi;
-                Xi.x = GetBNDSequenceSample(positionSS, _FrameCount, 0);
-                Xi.y = GetBNDSequenceSample(positionSS, _FrameCount, 1);
+                // Xi.x = GetBNDSequenceSample(positionSS, _FrameCount, 0);
+                // Xi.y = GetBNDSequenceSample(positionSS, _FrameCount, 1);
+                Xi.x = GetBNDSequenceSample(positionSS, 10, 0);
+                Xi.y = GetBNDSequenceSample(positionSS, 10, 1);
 
 
                 float3 normalWS;
@@ -270,6 +272,22 @@
                 float2 uv = IN.texCoord0;
 
                 uint2 positionSS = uv * _ScreenParams.xy;
+
+                
+
+
+
+                int mip = 7;
+                int2 mipCoord = (int2)positionSS.xy >> mip;
+                
+
+
+                    float d = LOAD_TEXTURE2D_X_LOD(_DepthPyramidTexture, mipCoord, mip).r;
+
+                return d;
+
+
+                
 
                 // return (float2)positionSS / 512;
 
@@ -588,14 +606,14 @@
             float3 GetHitColor(float2 hitPositionNDC, float perceptualRoughness, out float opacity, int mipLevel = 0)
             {
                 float2 prevFrameNDC = (hitPositionNDC);
-                float2 prevFrameUV = prevFrameNDC * 512;
+                float2 prevFrameUV = prevFrameNDC * _ScreenParams.xy;
 
                 float tmpCoef = 1.0;
                 opacity = 1.0;
                 // opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength) * tmpCoef;
-return SampleSceneColor(hitPositionNDC);
+                // return SampleSceneColor(hitPositionNDC);
                 // return 1;
-                // return float3(hitPositionNDC, 0);
+                return float3(hitPositionNDC, 0);
                 // return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
             }
 
@@ -626,7 +644,7 @@ return SampleSceneColor(hitPositionNDC);
                 return hitData;
             }
 
-            half3 frag(Varyings IN) : SV_Target
+            half4 frag(Varyings IN) : SV_Target
             {
                 float2 uv = IN.texCoord0;
                 uint2 positionSS0 = uv * _ScreenParams.xy;
@@ -680,7 +698,7 @@ return SampleSceneColor(hitPositionNDC);
                 // float3 color = SampleSceneColor(hitPositionNDC);
 
 
-                float3 color = 0.0f;
+                float4 color = 0.0f;
 
 
                 #define BLOCK_SAMPLE_RADIUS 1
@@ -709,7 +727,7 @@ return SampleSceneColor(hitPositionNDC);
                             uint3 intCol = asuint(color);
                             bool isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
 
-                            float2 prevFrameUV = hitData * 512;
+                            float2 prevFrameUV = hitData * _ScreenParams.xy;
 
                             color = isPosFin ? color : 0;
 
@@ -776,7 +794,7 @@ return SampleSceneColor(hitPositionNDC);
             SAMPLER(sampler_DepthPyramidTexture);
             float4 _DepthPyramidTexture_TexelSize;
 
-                float _SsrAccumulationAmount;
+            float _SsrAccumulationAmount;
 
             struct Attributes
             {
@@ -852,7 +870,7 @@ return SampleSceneColor(hitPositionNDC);
             float3 GetHitColor(float2 hitPositionNDC, float perceptualRoughness, out float opacity, int mipLevel = 0)
             {
                 float2 prevFrameNDC = (hitPositionNDC);
-                float2 prevFrameUV = prevFrameNDC * 512;
+                float2 prevFrameUV = prevFrameNDC * _ScreenParams.xy;
 
                 float tmpCoef = 1.0;
                 opacity = 1.0;
@@ -890,7 +908,7 @@ return SampleSceneColor(hitPositionNDC);
                 return hitData;
             }
 
-            half3 frag(Varyings IN) : SV_Target
+            half4 frag(Varyings IN) : SV_Target
             {
                 float2 uv = IN.texCoord0;
                 uint2 positionSS = uv * _ScreenParams.xy;
@@ -926,32 +944,25 @@ return SampleSceneColor(hitPositionNDC);
                 float2 motionVectorCenterNDC = 0;
 
 
+                // 128 is an arbitrary value used historical
+                // 0.5f is the default for the parameter 'Speed Rejection': ScreenSpaceReflection.cs 'speedRejectionParam'
+                // 0.2f is the default for the parameter 'Speed Rejection Scaler Factor': ScreenSpaceReflection.cs 'speedRejectionScalerFactor'
+                float speed = 0;
 
-    // 128 is an arbitrary value used historical
-    // 0.5f is the default for the parameter 'Speed Rejection': ScreenSpaceReflection.cs 'speedRejectionParam'
-    // 0.2f is the default for the parameter 'Speed Rejection Scaler Factor': ScreenSpaceReflection.cs 'speedRejectionScalerFactor'
-    float speed = 0;
+                float coefExpAvg = lerp(_SsrAccumulationAmount, 1.0f, speed);
 
-    float coefExpAvg = lerp(_SsrAccumulationAmount, 1.0f, speed);
-
-// return coefExpAvg;
-    float4 result = lerp(previous, original, coefExpAvg);
-
+                // return coefExpAvg;
+                float4 result = lerp(previous, original, coefExpAvg);
 
 
-    uint3 intCol = asuint(result.rgb);
-    bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
+                uint3 intCol = asuint(result.rgb);
+                bool isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
 
-    result.rgb = isPosFin ? result.rgb : 0;
-    result.w = isPosFin ? result.w : 0;
+                result.rgb = isPosFin ? result.rgb : 0;
+                result.w = isPosFin ? result.w : 0;
 
                 return result;
-                
-         
             }
-            
-            
-            
             ENDHLSL
         }
     }
