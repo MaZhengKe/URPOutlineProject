@@ -207,10 +207,10 @@
 
 
                 float2 Xi;
-                // Xi.x = GetBNDSequenceSample(positionSS, _FrameCount, 0);
-                // Xi.y = GetBNDSequenceSample(positionSS, _FrameCount, 1);
-                Xi.x = GetBNDSequenceSample(positionSS, 10, 0);
-                Xi.y = GetBNDSequenceSample(positionSS, 10, 1);
+                Xi.x = GetBNDSequenceSample(positionSS, _FrameCount, 0);
+                Xi.y = GetBNDSequenceSample(positionSS, _FrameCount, 1);
+                // Xi.x = GetBNDSequenceSample(positionSS, 10, 0);
+                // Xi.y = GetBNDSequenceSample(positionSS, 10, 1);
 
 
                 float3 normalWS;
@@ -957,6 +957,7 @@
 
                 float coefExpAvg = lerp(_SsrAccumulationAmount, 1.0f, speed);
 
+                // coefExpAvg = 1;
                 // return coefExpAvg;
                 float4 result = lerp(previous, original, coefExpAvg);
 
