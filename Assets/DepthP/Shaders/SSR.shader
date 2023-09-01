@@ -421,7 +421,7 @@
                     rayPos.xy += raySign.xy * satEdgeDist;
 
                     int2 mipCoord = (int2)rayPos.xy >> mipLevel;
-                    
+
                     int4 mipOffset = _DepthPyramidMipLevelOffsets[mipLevel];
 
 
@@ -617,7 +617,7 @@
                 float tmpCoef = 1.0;
                 opacity = 1.0;
                 // opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength) * tmpCoef;
-                // return SampleSceneColor(hitPositionNDC);
+                return SampleSceneColor(hitPositionNDC);
                 // return 1;
                 return float3(hitPositionNDC, 0);
                 // return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
@@ -787,6 +787,9 @@
             SAMPLER(sampler_SsrHitPointTexture);
             float4 _SsrHitPointTexture_TexelSize;
 
+            TEXTURE2D_X_FLOAT(_MotionVectorTexture);
+            SAMPLER(sampler_MotionVectorTexture);
+            float4 _MotionVectorTexture_TexelSize;
 
             TEXTURE2D_X_FLOAT(_SSRAccumTexture);
             SAMPLER(sampler_SSRAccumTexture);
@@ -943,17 +946,25 @@
 
                 float4 original = _SSRAccumTexture[(positionSS)];
 
-                float4 previous = _SsrAccumPrev[(positionSS)];
+
+                float4 previous = _SsrAccumPrev[(positionSS).xy];
+
+                float2 motionVectorNDC = SAMPLE_TEXTURE2D_X(_MotionVectorTexture, sampler_MotionVectorTexture,
+                                                            hitPositionNDC.xy).xy;
+
+                float2 motionVector = motionVectorNDC * _ScreenParams.xy;
 
 
-                float2 motionVectorNDC = 0;
-                float2 motionVectorCenterNDC = 0;
+                float2 positionNDC = positionSS * _ScreenSize.zw + (0.5 * _ScreenSize.zw);
+                float2 motionVectorCenterNDC = SAMPLE_TEXTURE2D_X(_MotionVectorTexture, sampler_MotionVectorTexture,
+                                                                  positionNDC).xy;
 
 
+                float motionLength = length(motionVector);
                 // 128 is an arbitrary value used historical
                 // 0.5f is the default for the parameter 'Speed Rejection': ScreenSpaceReflection.cs 'speedRejectionParam'
                 // 0.2f is the default for the parameter 'Speed Rejection Scaler Factor': ScreenSpaceReflection.cs 'speedRejectionScalerFactor'
-                float speed = 0;
+                float speed = saturate(motionLength * 0.1);
 
                 float coefExpAvg = lerp(_SsrAccumulationAmount, 1.0f, speed);
 
@@ -970,6 +981,69 @@
 
                 return result;
             }
+            ENDHLSL
+        }
+        
+
+        Pass
+        {
+            Name "add"
+            Blend One One
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+
+                
+
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonLighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ImageBasedLighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+
+
+            TEXTURE2D_X_FLOAT(_SsrLightingTexture);
+            SAMPLER(sampler_SsrLightingTexture);
+            float4 _SsrLightingTexture_TexelSize;
+
+            struct Attributes
+            {
+                uint vertexID : VERTEXID_SEMANTIC;
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 texCoord0 : TEXCOORD0;
+            };
+
+            Varyings vert(Attributes IN)
+            {
+                Varyings output;
+                output.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
+                output.texCoord0 = output.positionCS.xy * 0.5 + 0.5;
+
+                #if UNITY_UV_STARTS_AT_TOP
+                output.texCoord0.y = 1 - output.texCoord0.y;
+                #endif
+                return output;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                float2 uv = IN.texCoord0;
+                float4 color = SAMPLE_TEXTURE2D_X(_SsrLightingTexture,sampler_SsrLightingTexture, uv);
+                return color * 0.02;
+            }
+                
             ENDHLSL
         }
     }

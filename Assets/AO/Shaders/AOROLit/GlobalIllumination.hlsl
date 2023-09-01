@@ -428,7 +428,7 @@ half3 GlobalIllumination(BRDFData brdfData, BRDFData brdfDataClearCoat, float cl
     // indirectSpecular = lerp(indirectSpecular, SSR.rgb, SSR.a);
     // indirectSpecular = lerp(indirectSpecular, SSR.rgb, 0);
 
-    indirectSpecular += SSR.rgb;
+    // indirectSpecular += SSR.rgb;
 
     indirectDiffuse *= occlusion;
     

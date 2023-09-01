@@ -242,7 +242,8 @@ MonoBehaviour:
   - {fileID: -1888180886370366353}
   - {fileID: -554691194882331045}
   - {fileID: -8428938818679620333}
-  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe090eab995da90389238b6429160437446f4c36e47cd5cbe55b6e00114c574df813bd1987cd64068b
+  - {fileID: 9195500075658177150}
+  m_RendererFeatureMap: 76f2e298663c0075ec24173ddfbfa1c0903933e7d23ccd38a78dd650251a47fe090eab995da90389238b6429160437446f4c36e47cd5cbe55b6e00114c574df813bd1987cd64068b7eeaae5599fa9c7f
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -365,3 +366,18 @@ MonoBehaviour:
   renderingLayerMask:
     m_Mask: 2
   renderPassEvent: 500
+--- !u!114 &9195500075658177150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f5a3fbab60a4df78d6d773a58697fde, type: 3}
+  m_Name: MotionVectorFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  MotionVectorShader: {fileID: 4800000, guid: 74d71d252bf948599092712c177d2995, type: 3}
+  motionVectorMaterial: {fileID: 0}

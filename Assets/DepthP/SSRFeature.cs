@@ -208,8 +208,7 @@ namespace DepthP
                 cmd.SetGlobalTexture("_SsrLightingTexture",SsrLightingTexture);
 
                 
-                CoreUtils.SetRenderTarget(cmd,m_Renderer.cameraColorTargetHandle);
-                Blitter.BlitTexture(cmd, SsrLightingTexture,new Vector4(1,1,0,0),0,false);
+                CoreUtils.DrawFullScreen(cmd, m_Material, m_Renderer.cameraColorTargetHandle,null,3);
                 
                 
                 

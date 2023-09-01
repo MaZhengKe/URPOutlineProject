@@ -53,8 +53,7 @@ namespace DepthP
     {
         private readonly ProfilingSampler m_ProfilingSampler =
             ProfilingSampler.Get(DepthPyramidFeature.ProfileId.DepthPyramid);
-        
-        
+
         protected ScriptableRenderer m_Renderer;
         
         private Material m_Material;
@@ -74,8 +73,7 @@ namespace DepthP
             info = new PackedMipChainInfo();
             info.Allocate();
         }
-        
-        
+
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             base.OnCameraSetup(cmd, ref renderingData);
@@ -112,15 +110,14 @@ namespace DepthP
             RenderingUtils.ReAllocateIfNeeded(ref DepthPyramidAllTMPTexture, allDescriptor, FilterMode.Bilinear,
                 TextureWrapMode.Clamp, name: "_DepthPyramidAllTMPTexture");
         }
-        
-        
+
         public bool Setup(ScriptableRenderer renderer, Material material)
         {
             m_Renderer = renderer;
             m_Material = material;
             return true;
         }
-        
+
         public void Dispose()
         {
             DepthPyramidTexture?.Release();
